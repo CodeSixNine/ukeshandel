@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ukeshandel</title>
+<meta name="theme-color" content="#2f7a4c">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>\n*{{box-sizing:border-box}}\nhtml,body{{margin:0}}\n[hidden]{{display:none!important}}\n:root{{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}
+/* Layout: one narrow column like a phone note; sticky tab bar; dinner section on top, rest below */
+:root{
+  --bg:#f6f7f3; --card:#ffffff; --ink:#1d2621; --muted:#66716a; --line:#e2e6df;
+  --accent:#2f7a4c; --accent-soft:#e3f0e7; --done:#a3aba5;
+  --f-display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131815; --card:#1b221e; --ink:#e7ece8; --muted:#97a39b; --line:#2b352f;
+  --accent:#6cc28f; --accent-soft:#1f3328; --done:#5d6861; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131815; --card:#1b221e; --ink:#e7ece8; --muted:#97a39b; --line:#2b352f;
+  --accent:#6cc28f; --accent-soft:#1f3328; --done:#5d6861; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:17px;line-height:1.4}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 80px}
+h1{font-family:var(--f-display);font-weight:800;font-size:1.9rem;margin:6px 0 2px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:.95rem;margin:0 0 12px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;padding-block:8px;border-bottom:1px solid var(--line)}
+nav button{flex:1;font:700 .95rem var(--f-body);padding:10px 6px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.15rem;margin:22px 0 8px;text-wrap:balance}
+.group{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ghead b{color:var(--accent);font-size:.95rem;letter-spacing:0;text-transform:none;font-family:var(--f-display)}
+.groups{display:flex;flex-direction:column;gap:10px}
+ul{list-style:none;margin:0;padding:0}
+li.item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer;user-select:none}
+.ghead+ul li.item:first-child{border-top:0}
+li.item input{width:22px;height:22px;accent-color:var(--accent);flex:none;margin:0}
+li.item span{min-width:0;overflow-wrap:anywhere}
+li.item.on span{color:var(--done);text-decoration:line-through}
+.rest li.item:first-child{border-top:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{font:700 .95rem var(--f-body);padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.btn.small{padding:6px 10px;font-size:.85rem}
+.btn:focus-visible,nav button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input[type=text],input[type=search],select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);min-width:0;flex:1}
+label.tog{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.95rem}
+.day{display:grid;grid-template-columns:5.5em 1fr;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+.day:first-child{border-top:0}
+.day b{font-family:var(--f-display);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:4px 6px 4px 12px;font-size:.92rem}
+.chip button{border:0;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1;cursor:pointer;padding:2px 6px}
+.dish .ghead{align-items:center}
+.addline{display:flex;gap:8px;padding:0 14px 14px}
+.empty{color:var(--muted);padding:12px 14px}
+.status{color:var(--muted);font-size:.8rem;margin-top:24px;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.95rem;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:.95rem}
+li.item.edit{gap:10px}
+li.item.edit .grip{color:var(--muted);font-size:.9rem;letter-spacing:-2px;flex:none}
+li.item.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+body.editing .wrap{padding-bottom:220px}
+.panel{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:10px;padding-top:12px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.panel .ptitle{font-family:var(--f-display);font-weight:600;font-size:1.05rem;overflow-wrap:anywhere}
+.panel select{flex:1 1 160px}
+.addbox{display:flex;flex-direction:column;gap:8px}
+.addbox select{flex:none;width:100%}
+.addbox input[type=search]{flex:none}
+.reslist{background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:50vh;overflow-y:auto}
+li.res{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);cursor:pointer}
+li.res:first-child{border-top:0}
+li.res span{min-width:0;overflow-wrap:anywhere}
+li.res .state{margin-left:auto;flex:none;color:var(--accent);font-weight:700;font-size:.85rem}
+li.res.active{background:var(--accent-soft)}
+li.res.active .state{color:var(--muted);font-weight:400}
+.picker{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.picker[hidden]{display:none!important}
+.daybtn{text-align:left;width:100%;font-weight:400}
+.daybtn.none{color:var(--muted)}
+.cnt{margin-left:auto;color:var(--muted);font-size:.8rem;flex:none}
+.panel input[type=text]{flex:1 1 160px}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.phead b{font-family:var(--f-display);font-size:1.4rem}
+.picker #pk-q{flex:none}
+.pklist{flex:1;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.pklist li.item:first-child{border-top:0}
+li.item.picked{background:var(--accent-soft)}
+.pknew{background:var(--card);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.pknew select{flex:1 1 160px}
+.gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.gate[hidden]{display:none!important}
+.gate img{width:96px;height:96px;border-radius:22px}
+.gate h1{margin:0}
+.gate p{max-width:32ch;color:var(--muted);margin:0}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.8rem;cursor:pointer;padding:4px}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="gate" id="gate"><img src="icon-192.png" alt=""><h1>Ukeshandel</h1><p id="gate-msg">Laster…</p><button class="btn primary" id="login" hidden>Logg inn med Google</button></div>
+<div class="wrap">
+  <h1>Ukeshandel</h1>
+  <p class="sub" id="sub"></p>
+  <nav role="tablist">
+    <button role="tab" id="tab-liste" data-tab="liste" aria-selected="true">Handleliste</button>
+    <button role="tab" id="tab-uke" data-tab="uke" aria-selected="false">Ukeplan</button>
+    <button role="tab" id="tab-middager" data-tab="middager" aria-selected="false">Middager</button>
+  </nav>
+  <section id="view"></section>
+  <p class="status"><span id="status"></span> <button class="linkbtn" id="logout">Logg ut</button></p>
+</div>
+<div class="picker" id="picker" role="dialog" aria-label="Velg ingredienser" hidden></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script>
+
+const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
+const SEED={"dinners": [{"id": "taco", "ing": ["Tacolefse x 6", "Tacokrydder", "Tacosaus", "Kjøttdeig x 2", "Salat", "Agurk", "Paprika", "Gucamole krydder", "Revet ost x 2", "Nachos x", "Creme fraiche x 1"], "name": "Taco"}, {"id": "tomatpasta", "ing": ["Hakkede tomater", "Tomatpure", "Pasta penne"], "name": "Tomatpasta"}, {"id": "gyros", "ing": ["Pitabrød fryst x 2", "Salat", "Agurk", "Paprika", "Kyllingbiter", "Aiolo"], "name": "Gyros"}, {"id": "pestopasta", "ing": ["Pesto", "Fusli", "Fetaost", "Løk"], "name": "Pestopasta"}, {"id": "pizza", "ing": ["Pizzabunn", "Pizzasaus", "Pizzatopping x", "Revet ost x 2"], "name": "Pizza"}, {"id": "pai", "ing": ["Paibunn", "Egg", "Fløte", "Bacon x 2", "Revet ost x 2", "Frosne brokkoli"], "name": "Pai"}, {"id": "tomatsuppe", "ing": ["Tomatsuppe", "Egg"], "name": "Tomatsuppe"}], "items": [{"c": true, "n": "Pinjekjerner"}, {"c": true, "n": "Ferdig taco ting"}, {"c": true, "n": "Fløtegratinerte poteter x 2"}, {"c": true, "n": "Jordbær (to kurver???)"}, {"c": true, "n": "Bringebær"}, {"c": false, "n": "Agurk"}, {"c": false, "n": "Paprika"}, {"c": false, "n": "Salat"}, {"c": false, "n": "Rucola"}, {"c": true, "n": "Salatpose"}, {"c": true, "n": "Avocado"}, {"c": true, "n": "Banan"}, {"c": true, "n": "Druer (lilla!!!!!!!!!!!!!!!!!!!!!)"}, {"c": false, "n": "Løk"}, {"c": true, "n": "Hvitløk"}, {"c": true, "n": "Brokkoli"}, {"c": true, "n": "Blomkål"}, {"c": true, "n": "Gulrot"}, {"c": true, "n": "Potet"}, {"c": true, "n": "Kiwi x 2"}, {"c": true, "n": "Appelsin x 2"}, {"c": true, "n": "Eple x 2 grønn (ikke sure)"}, {"c": true, "n": "Jordbær om tilbud/billig"}, {"c": true, "n": "Sitrondråpa"}, {"c": true, "n": "Honning"}, {"c": true, "n": "Hvit monster x 2"}, {"c": true, "n": "Stor redbull vanlig"}, {"c": true, "n": "Focaccia"}, {"c": true, "n": "Gifflar x 2"}, {"c": true, "n": "Brød"}, {"c": true, "n": "Pølsebrød x 10"}, {"c": true, "n": "Hamburgerbrød"}, {"c": true, "n": "Bjørn Grøt x 5"}, {"c": false, "n": "Aiolo"}, {"c": false, "n": "Taziki"}, {"c": true, "n": "Pepperoni"}, {"c": false, "n": "Pizzatopping x"}, {"c": false, "n": "Pizzabunn"}, {"c": false, "n": "Pizzasaus"}, {"c": true, "n": "Pizzasaus (hvit)"}, {"c": true, "n": "Pinsabunn"}, {"c": false, "n": "Paibunn"}, {"c": false, "n": "Kjøttdeig x 2"}, {"c": true, "n": "Kjøttboller"}, {"c": true, "n": "Kyllingfilet x"}, {"c": true, "n": "Wok kjøtt"}, {"c": false, "n": "Kyllingbiter"}, {"c": true, "n": "Salatkylling"}, {"c": true, "n": "Salatkylling (Creol)"}, {"c": true, "n": "Pølse"}, {"c": true, "n": "Hamburger"}, {"c": true, "n": "Påleggskinke"}, {"c": true, "n": "Salami (Jubel)"}, {"c": true, "n": "Smårettskinke x"}, {"c": false, "n": "Bacon x 2"}, {"c": true, "n": "Spekeskinke"}, {"c": true, "n": "Grøt x 2"}, {"c": false, "n": "Fetaost"}, {"c": true, "n": "Kremgo (naturell)"}, {"c": true, "n": "Kremgo (urter)"}, {"c": true, "n": "Kremgo (krydder)"}, {"c": false, "n": "Revet ost x 2"}, {"c": false, "n": "Parmegano"}, {"c": true, "n": "Mozarella"}, {"c": true, "n": "Ost"}, {"c": true, "n": "Brunost"}, {"c": true, "n": "Majones"}, {"c": false, "n": "Egg"}, {"c": true, "n": "Pepper"}, {"c": true, "n": "Kanel"}, {"c": true, "n": "Gastromat"}, {"c": true, "n": "Hvitløkssalt"}, {"c": true, "n": "Paprikapulver"}, {"c": true, "n": "Oregano"}, {"c": true, "n": "Olivenolje"}, {"c": true, "n": "Sennep"}, {"c": true, "n": "Ketchup"}, {"c": true, "n": "Sprøstekt løk"}, {"c": true, "n": "Makrell i tomat x 3"}, {"c": true, "n": "Tørrgjær"}, {"c": true, "n": "Siktet hvetemel"}, {"c": true, "n": "Havregryn"}, {"c": true, "n": "Sammalt hvetemel (grov)"}, {"c": true, "n": "Kokesjokolade 400g"}, {"c": true, "n": "Brunt sukker"}, {"c": true, "n": "Sukker"}, {"c": true, "n": "Ovnsbakte grønnsaker"}, {"c": true, "n": "Hvitløksbaguetter x 2"}, {"c": false, "n": "Pitabrød fryst x 2"}, {"c": true, "n": "Rundstykker x 2"}, {"c": true, "n": "Frosne bringebær"}, {"c": true, "n": "Frosne Skogsbær"}, {"c": false, "n": "Frosne brokkoli"}, {"c": false, "n": "Pai grønnsaker"}, {"c": true, "n": "Wok grønnsaker"}, {"c": true, "n": "AD Chicken"}, {"c": true, "n": "AD Fries"}, {"c": true, "n": "Fries"}, {"c": true, "n": "Ferdigpizza"}, {"c": false, "n": "Tomatpure"}, {"c": false, "n": "Hakkede tomater"}, {"c": true, "n": "Toro brownies"}, {"c": true, "n": "Bakepulver"}, {"c": true, "n": "Melis"}, {"c": true, "n": "Idun karamell saus"}, {"c": true, "n": "Sodd"}, {"c": true, "n": "Lapskausblanding"}, {"c": true, "n": "Saft"}, {"c": false, "n": "Creme fraiche x 1"}, {"c": true, "n": "Rømme"}, {"c": true, "n": "Melk"}, {"c": false, "n": "Melange"}, {"c": true, "n": "Melk vanilje 1,75"}, {"c": false, "n": "Fløte"}, {"c": true, "n": "Biola naturell"}, {"c": true, "n": "God morgen Yoghurt (gul) x 2"}, {"c": true, "n": "Skogsbæryoghurt"}, {"c": true, "n": "Vaniljeyoghurt"}, {"c": true, "n": "Vita hjertegod"}, {"c": true, "n": "Soft flora lett"}, {"c": true, "n": "Margarin"}, {"c": false, "n": "Tacolefse x 6"}, {"c": false, "n": "Tacokrydder"}, {"c": false, "n": "Tacosaus"}, {"c": false, "n": "Guacamole"}, {"c": false, "n": "Gucamole krydder"}, {"c": false, "n": "Pesto"}, {"c": true, "n": "Bolognesse saus (Dolmio)"}, {"c": true, "n": "Sweet chilli"}, {"c": true, "n": "Fløtesaus (se på"}, {"c": true, "n": "Carbonara pose"}, {"c": true, "n": "Tandorri pose"}, {"c": true, "n": "Kyllingsaus"}, {"c": false, "n": "Tomatsuppe"}, {"c": true, "n": "Naan"}, {"c": true, "n": "Spaghetti"}, {"c": false, "n": "Fusli"}, {"c": true, "n": "Nudler"}, {"c": true, "n": "Rør pasta"}, {"c": false, "n": "Pasta penne"}, {"c": true, "n": "Makaroni"}, {"c": true, "n": "Ris"}, {"c": false, "n": "Nachos x"}, {"c": true, "n": "Sørlandschips Paprika"}, {"c": true, "n": "4-pakk med Smirnoff ice (bokser)"}, {"c": true, "n": "Aloha x 2"}, {"c": true, "n": "Snacks !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"}, {"c": true, "n": "Peppimeppi"}, {"c": true, "n": "Poo corn"}, {"c": true, "n": "Smør pakke"}, {"c": true, "n": "Smågodt rosa skaller rosa bubs"}, {"c": true, "n": "Sørlands spansk paprika"}, {"c": true, "n": "BBQ Ship"}, {"c": true, "n": "Kims salt potetgull"}, {"c": true, "n": "Smes"}, {"c": true, "n": "Sjoko crunch"}, {"c": true, "n": "Suprise me"}, {"c": true, "n": "New energy x 2"}, {"c": true, "n": "Cleanex"}, {"c": true, "n": "Tørkepapir"}, {"c": true, "n": "Dopapir"}, {"c": true, "n": "Bakepapir"}, {"c": true, "n": "Plastfolie"}, {"c": true, "n": "Plastpose"}, {"c": true, "n": "Søppelpose"}, {"c": true, "n": "Vaskebørste"}, {"c": true, "n": "Vaskemiddel (Klær)"}, {"c": true, "n": "Oppvaskmiddel"}, {"c": true, "n": "Jif Ovn"}, {"c": true, "n": "Zalo"}, {"c": true, "n": "Vaskehansker"}, {"c": true, "n": "Tannbørste hode"}, {"c": true, "n": "Tannbørste"}, {"c": true, "n": "Tannbørste små"}, {"c": true, "n": "Tannkrem x 2"}, {"c": true, "n": "Q-tips"}, {"c": true, "n": "Engangssprøyte"}, {"c": true, "n": "Deo lysegrønn aloe Vera"}, {"c": true, "n": "Asan med tranebær"}, {"c": true, "n": "Ibux"}, {"c": true, "n": "Bjørn"}, {"c": true, "n": "Tran"}, {"c": false, "n": "Spagetti"}, {"c": false, "n": "creme fraiche"}, {"c": false, "n": "cre"}], "notes": {"Lørdag": "Finn på no"}, "v": 1, "week": {"Fredag": "pizza", "Lørdag": "tomatsuppe", "Mandag": "taco", "Onsdag": "gyros", "Søndag": "pai", "Tirsdag": "tomatpasta", "Torsdag": "pestopasta"}};
+function key(s){return String(s).trim().toLowerCase()}
+function applyWeek(st){
+  const need=new Set();
+  for(const d of DAYS){const din=st.dinners.find(x=>x.id===st.week[d]);if(din)din.ing.forEach(i=>need.add(key(i)))}
+  for(const din of st.dinners)for(const i of din.ing){if(need.has(key(i))&&!st.items.some(it=>key(it.n)===key(i)))st.items.push({n:i,c:false})}
+  st.items.forEach(it=>{if(need.has(key(it.n)))it.c=false});
+  return need.size;
+}
+
+
+let S=JSON.parse(JSON.stringify(SEED));
+let tab="liste", hideDone=false, db=null, ref=null, saving=false, dirty=false, saveTimer=null, confirmReset=false;
+let dayPick=null, dayQ="", addQ="";
+let editMode=false, selItem=null, delArm=false, pickerDin=null, pickerQ="";
+try{tab=localStorage.getItem("tab")||"liste";hideDone=localStorage.getItem("hide")==="1"}catch(e){}
+try{const l=localStorage.getItem("state");if(l)S=JSON.parse(l)}catch(e){}
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)}
+function status(m){$("#status").textContent=m}
+
+function changed(noRender){
+  try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
+  dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(save,700);if(!noRender)render();
+}
+async function save(){
+  if(!ref||saving)return;
+  saving=true;dirty=false;
+  try{await ref.set(JSON.parse(JSON.stringify(S)));status("Lagret")}
+  catch(e){status(e&&e.code==="permission-denied"?"Du har ikke tilgang til å endre listen":"Kunne ikke lagre nå, prøver igjen ved neste endring")}
+  saving=false;if(dirty)save();
+}
+
+/* ---- placering i listen ---- */
+function posOptions(exclude){
+  let o=`<option value="end">Nederst</option><option value="top">Øverst</option>`;
+  for(const it of S.items){if(exclude&&it===exclude)continue;o+=`<option value="k:${esc(key(it.n))}">Etter: ${esc(it.n)}</option>`}
+  return o;
+}
+function placeAt(obj,pos){
+  const i=S.items.indexOf(obj);if(i>=0)S.items.splice(i,1);
+  if(pos==="top")S.items.unshift(obj);
+  else if(pos&&pos.startsWith("k:")){const t=S.items.findIndex(it=>key(it.n)===pos.slice(2));if(t>=0)S.items.splice(t+1,0,obj);else S.items.push(obj)}
+  else S.items.push(obj);
+}
+function findItem(n){return S.items.find(it=>key(it.n)===key(n))}
+
+/* ---- handleliste ---- */
+function itemLi(ix){
+  const it=S.items[ix];
+  if(editMode)return `<li class="item edit${it===selItem?" sel":""}" data-ix="${ix}"><span class="grip" aria-hidden="true">⋮⋮</span><span>${esc(it.n)}</span></li>`;
+  return `<li class="item${it.c?" on":""}" data-ix="${ix}"><input type="checkbox" id="c${ix}" ${it.c?"checked":""} tabindex="-1" aria-label="${esc(it.n)}"><span>${esc(it.n)}</span></li>`;
+}
+function addMatches(){const q=key(addQ);if(!q)return[];return S.items.filter(it=>key(it.n).includes(q))}
+function addResHtml(){
+  const q=addQ.trim();if(!q)return"";
+  const m=addMatches();
+  let h="";
+  if(m.length)h+=`<ul class="reslist">${m.map(it=>`<li class="res${it.c?"":" active"}" data-ak="${esc(key(it.n))}"><span>${esc(it.n)}</span><small class="state">${it.c?"Legg på listen":"På listen ✓"}</small></li>`).join("")}</ul>`;
+  else h+=`<p class="sub" style="margin:0">Ingen treff i sortimentet.</p>`;
+  if(!findItem(q))h+=`<div class="pknew"><div>Ny vare: <b>${esc(q)}</b></div><select id="newpos" aria-label="Plassering i listen">${posOptions()}</select><button class="btn small primary" id="additem">Legg til ny vare</button></div>`;
+  return h;
+}
+function refreshAdd(){const el=$("#addres");if(el)el.innerHTML=addResHtml()}
+function pickExisting(it){
+  if(it.c){it.c=false;toast(it.n+" lagt på listen");addQ="";changed();const i=$("#newitem");if(i)i.focus()}
+  else{it.c=true;toast(it.n+" huket av");changed()}
+}
+function renderListe(){
+  let h=`<div class="toolbar">`;
+  if(!editMode)h+=`<label class="tog"><input type="checkbox" id="hide" ${hideDone?"checked":""}> Skjul avhuket</label>`;
+  h+=`<button class="btn small${editMode?" primary":""}" id="editmode" style="margin-left:auto">${editMode?"Ferdig":"Endre rekkefølge"}</button></div>`;
+  if(editMode)h+=`<p class="sub" style="margin-top:8px">Trykk på en vare for å flytte eller slette den.</p>`;
+  if(!editMode)h+=`<h2>Legg til vare</h2><div class="addbox"><input type="search" id="newitem" placeholder="Søk i sortimentet eller skriv ny vare" value="${esc(addQ)}" autocomplete="off"><div id="addres">${addResHtml()}</div></div>`;
+  const rows=S.items.map((it,ix)=>ix).filter(ix=>editMode||!(hideDone&&S.items[ix].c));
+  h+=`<div class="group rest" style="margin-top:12px"><ul>${rows.map(itemLi).join("")||`<li class="empty">Alt er avhuket</li>`}</ul></div>`;
+  if(editMode&&selItem){
+    h+=`<div class="panel"><div class="ptitle">${esc(selItem.n)}</div>
+      <div class="row"><button class="btn small" id="mv-up">↑ Opp</button><button class="btn small" id="mv-down">↓ Ned</button><select id="mv-after" aria-label="Flytt til">${'<option value="">Flytt til…</option>'+posOptions(selItem)}</select></div>
+      <div class="row"><input type="text" id="mv-name" value="${esc(selItem.n)}" aria-label="Nytt navn"><button class="btn small" id="mv-rename">Endre navn</button></div>
+      <div class="row"><button class="btn small" id="mv-del">${delArm?"Trykk igjen for å slette":"Slett vare"}</button><button class="btn small primary" id="mv-done" style="margin-left:auto">Ferdig</button></div></div>`;
+  }
+  return h;
+}
+
+/* ---- ukeplan ---- */
+function renderUke(){
+  const opts=id=>`<option value="">Ingen middag</option>`+S.dinners.map(d=>`<option value="${esc(d.id)}" ${d.id===id?"selected":""}>${esc(d.name)}</option>`).join("");
+  let h=`<h2>Hva skal dere spise?</h2><div class="group">`;
+  for(const d of DAYS){const din=S.dinners.find(x=>x.id===S.week[d]);h+=`<div class="day"><b>${d}</b><button class="btn daybtn${din?"":" none"}" data-dayp="${d}">${din?esc(din.name):"Velg middag"}</button></div>`}
+  h+=`</div><p class="sub" style="margin-top:10px">Når du velger en middag, blir ingrediensene uavhuket i handlelisten. Rekkefølgen i listen endres ikke.</p>`;
+  h+=`<div class="toolbar"><button class="btn primary" id="newweek">Ny uke: huk av alt annet</button></div>`;
+  if(confirmReset)h+=`<div class="confirm">Alt som ikke hører til ukens middager blir avhuket. <button class="btn small primary" id="yesreset">Ja, gjør det</button><button class="btn small" id="noreset">Avbryt</button></div>`;
+  return h;
+}
+
+/* ---- middager ---- */
+function renderMiddager(){
+  let h=`<h2>Dine middager</h2><div class="groups">`;
+  for(const d of S.dinners){
+    h+=`<div class="group dish"><div class="ghead"><b>${esc(d.name)}</b><button class="btn small" data-deldin="${esc(d.id)}">Slett</button></div>
+    <div class="chips">${d.ing.map((i,k)=>`<span class="chip">${esc(i)}<button data-din="${esc(d.id)}" data-delk="${k}" aria-label="Fjern ${esc(i)}">×</button></span>`).join("")||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
+    <div class="addline"><button class="btn small primary" data-pick="${esc(d.id)}">Velg ingredienser fra listen</button></div></div>`;
+  }
+  h+=`</div><div class="toolbar"><input type="text" id="newdin" placeholder="Ny middag, f.eks. Lasagne"><button class="btn primary" id="adddin">Lag middag</button></div>`;
+  return h;
+}
+
+/* ---- ingrediensvelger ---- */
+function pickListHtml(){
+  const d=S.dinners.find(x=>x.id===pickerDin);if(!d)return"";
+  const q=key(pickerQ),inDin=new Set(d.ing.map(key));
+  const rows=S.items.filter(it=>!q||key(it.n).includes(q));
+  let h=rows.map(it=>`<li class="item${inDin.has(key(it.n))?" picked":""}" data-pk="${esc(key(it.n))}"><input type="checkbox" tabindex="-1" ${inDin.has(key(it.n))?"checked":""} aria-label="${esc(it.n)}"><span>${esc(it.n)}</span></li>`).join("");
+  if(!rows.length)h=`<li class="empty">Ingen varer i listen matcher «${esc(pickerQ)}»</li>`;
+  return h;
+}
+function pickNewHtml(){
+  const q=pickerQ.trim();
+  if(!q||findItem(q))return"";
+  return `<div class="pknew"><div>Ny vare: <b>${esc(q)}</b></div><div class="row"><select id="pk-pos" aria-label="Plassering i listen">${posOptions()}</select><button class="btn small primary" id="pk-add">Legg til i listen og middagen</button></div></div>`;
+}
+function dayListHtml(){
+  const q=key(dayQ),cur=S.week[dayPick]||"";
+  const rows=S.dinners.filter(d=>!q||key(d.name).includes(q));
+  let h=q?"":`<li class="item${cur===""?" picked":""}" data-did=""><span>Ingen middag</span></li>`;
+  h+=rows.map(d=>`<li class="item${d.id===cur?" picked":""}" data-did="${esc(d.id)}"><span>${esc(d.name)}</span><small class="cnt">${d.ing.length} ingredienser</small></li>`).join("");
+  if(q&&!rows.length)h+=`<li class="empty">Ingen middag heter «${esc(dayQ)}»</li>`;
+  return h;
+}
+function dayNewHtml(){const q=dayQ.trim();if(!q||S.dinners.some(d=>key(d.name)===key(q)))return"";
+  return `<div class="pknew"><div>Ny middag: <b>${esc(q)}</b></div><button class="btn small primary" id="dp-add">Lag middagen og velg ingredienser</button></div>`}
+function setDay(id){S.week[dayPick]=id;applyWeek(S);changed(true);const din=S.dinners.find(x=>x.id===id);if(din)toast(din.name+": ingredienser uavhuket")}
+function renderPicker(){
+  const el=$("#picker");
+  if(dayPick){el.hidden=false;document.body.style.overflow="hidden";
+    el.innerHTML=`<div class="phead"><b>${esc(dayPick)}</b><button class="btn small" id="dp-done">Lukk</button></div>
+      <input type="text" id="dp-q" placeholder="Søk etter middag" value="${esc(dayQ)}" autocomplete="off">
+      <div id="dp-new">${dayNewHtml()}</div><ul id="dp-list" class="pklist">${dayListHtml()}</ul>`;
+    return}
+  const d=S.dinners.find(x=>x.id===pickerDin);
+  if(!d){el.hidden=true;document.body.style.overflow="";return}
+  el.hidden=false;document.body.style.overflow="hidden";
+  el.innerHTML=`<div class="phead"><b>${esc(d.name)}</b><button class="btn small primary" id="pk-done">Ferdig</button></div>
+    <input type="text" id="pk-q" placeholder="Søk i listen, eller skriv en ny vare" value="${esc(pickerQ)}" autocomplete="off">
+    <div id="pk-new">${pickNewHtml()}</div>
+    <ul id="pk-list" class="pklist">${pickListHtml()}</ul>`;
+}
+function refreshPick(){$("#pk-list").innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml()}
+function closePicker(){pickerDin=null;pickerQ="";renderPicker();render()}
+
+function render(){
+  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
+  if(selItem&&!S.items.includes(selItem))selItem=null;
+  document.body.classList.toggle("editing",!!(editMode&&selItem));
+  $("#view").innerHTML=tab==="uke"?renderUke():tab==="middager"?renderMiddager():renderListe();
+  $("#sub").textContent=S.items.filter(it=>!it.c).length+" varer igjen å handle";
+}
+
+document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;confirmReset=false;editMode=false;selItem=null;try{localStorage.setItem("tab",tab)}catch(_){};render()});
+$("#view").addEventListener("click",e=>{
+  const t=e.target;
+  const rs=t.closest("li.res");
+  if(rs){const it=findItem(rs.dataset.ak);if(it)pickExisting(it);return}
+  const li=t.closest("li.item");
+  if(li){const it=S.items[+li.dataset.ix];
+    if(editMode){selItem=selItem===it?null:it;delArm=false;render();return}
+    it.c=!it.c;changed();return}
+  if(t.id==="editmode"){editMode=!editMode;selItem=null;delArm=false;render();return}
+  if(t.id==="mv-up"||t.id==="mv-down"){const i=S.items.indexOf(selItem),j=t.id==="mv-up"?i-1:i+1;if(j<0||j>=S.items.length)return;S.items.splice(i,1);S.items.splice(j,0,selItem);changed();scrollSel();return}
+  if(t.id==="mv-rename"){renameSel();return}
+  if(t.dataset.dayp){dayPick=t.dataset.dayp;dayQ="";renderPicker();return}
+  if(t.id==="mv-done"){selItem=null;delArm=false;render();return}
+  if(t.id==="mv-del"){if(!delArm){delArm=true;render();return}
+    const k=key(selItem.n);S.items.splice(S.items.indexOf(selItem),1);S.dinners.forEach(d=>d.ing=d.ing.filter(i=>key(i)!==k));toast(selItem.n+" slettet");selItem=null;delArm=false;changed();return}
+  if(t.id==="additem"){addItem();return}
+  if(t.id==="newweek"){confirmReset=true;render();return}
+  if(t.id==="noreset"){confirmReset=false;render();return}
+  if(t.id==="yesreset"){const need=new Set();for(const d of DAYS){const din=S.dinners.find(x=>x.id===S.week[d]);if(din)din.ing.forEach(i=>need.add(key(i)))}
+    S.items.forEach(it=>it.c=!need.has(key(it.n)));confirmReset=false;changed();toast("Klar for ny uke");return}
+  if(t.dataset.delk!==undefined){const d=S.dinners.find(x=>x.id===t.dataset.din);d.ing.splice(+t.dataset.delk,1);changed();return}
+  if(t.dataset.pick){pickerDin=t.dataset.pick;pickerQ="";renderPicker();return}
+  if(t.dataset.deldin){const id=t.dataset.deldin;S.dinners=S.dinners.filter(x=>x.id!==id);for(const d of DAYS)if(S.week[d]===id)S.week[d]="";changed();return}
+  if(t.id==="adddin"){const v=$("#newdin").value.trim();if(!v)return;let id=key(v).replace(/[^a-z0-9æøå]+/g,"-")||"m";while(S.dinners.some(x=>x.id===id))id+="-2";S.dinners.push({id,name:v,ing:[]});changed();pickerDin=id;pickerQ="";renderPicker()}
+});
+$("#view").addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="hide"){hideDone=t.checked;try{localStorage.setItem("hide",hideDone?"1":"0")}catch(_){};render();return}
+  if(t.id==="mv-after"&&t.value){placeAt(selItem,t.value);changed();scrollSel();toast("Flyttet");return}
+  const day=t.dataset.day;if(day){S.week[day]=t.value;const din=S.dinners.find(x=>x.id===t.value);applyWeek(S);changed();if(din)toast(din.name+": ingredienser uavhuket")}
+});
+function renameSel(){
+  const v=$("#mv-name").value.trim();if(!v||!selItem||v===selItem.n)return;
+  const other=findItem(v);if(other&&other!==selItem){toast(v+" finnes allerede i listen");return}
+  const old=key(selItem.n);
+  S.dinners.forEach(d=>d.ing=d.ing.map(i=>key(i)===old?v:i));
+  selItem.n=v;changed();toast("Navn endret");
+}
+$("#view").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.target;if(t.id==="mv-name"){renameSel();return}if(t.id==="newitem")addItem();else if(t.id==="newdin")$("#adddin").click()});
+function scrollSel(){const i=S.items.indexOf(selItem);const el=document.querySelector(`li.item[data-ix="${i}"]`);if(el)el.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
+$("#view").addEventListener("input",e=>{if(e.target.id==="newitem"){addQ=e.target.value;refreshAdd()}});
+function addItem(){const v=addQ.trim();if(!v)return;
+  const m=addMatches();
+  if(!$("#newpos")){const ex=findItem(v)||(m.length===1?m[0]:null);if(ex){if(ex.c)pickExisting(ex);else toast(ex.n+" står allerede på listen");}return}
+  const pos=$("#newpos").value;addQ="";
+  let it=findItem(v);if(it){it.c=false;toast(it.n+" finnes allerede, uavhuket")}else{it={n:v,c:false};placeAt(it,pos);toast(v+" lagt til")}
+  changed();setTimeout(()=>$("#newitem")&&$("#newitem").focus(),0)}
+
+/* velger-hendelser */
+$("#picker").addEventListener("click",e=>{
+  if(dayPick){const t=e.target;
+    if(t.id==="dp-done"){dayPick=null;renderPicker();render();return}
+    if(t.id==="dp-add"){const v=dayQ.trim();let id=key(v).replace(/[^a-z0-9æøå]+/g,"-")||"m";while(S.dinners.some(x=>x.id===id))id+="-2";
+      S.dinners.push({id,name:v,ing:[]});setDay(id);dayPick=null;pickerDin=id;pickerQ="";renderPicker();return}
+    const li=t.closest("li.item");if(!li)return;setDay(li.dataset.did);dayPick=null;renderPicker();render();return}
+  const t=e.target,d=S.dinners.find(x=>x.id===pickerDin);if(!d)return;
+  if(t.id==="pk-done"){closePicker();return}
+  if(t.id==="pk-add"){const q=pickerQ.trim();if(!q)return;const it={n:q,c:true};placeAt(it,$("#pk-pos").value);d.ing.push(q);afterIngChange(d);pickerQ="";$("#pk-q").value="";refreshPick();toast(q+" lagt til");return}
+  const li=t.closest("li.item");if(!li)return;
+  const it=findItem(li.dataset.pk);if(!it)return;
+  const has=d.ing.some(i=>key(i)===key(it.n));
+  if(has)d.ing=d.ing.filter(i=>key(i)!==key(it.n));else d.ing.push(it.n);
+  afterIngChange(d);
+  li.classList.toggle("picked",!has);li.querySelector("input").checked=!has;
+});
+$("#picker").addEventListener("input",e=>{if(e.target.id==="dp-q"){dayQ=e.target.value;$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml();return}if(e.target.id==="pk-q"){pickerQ=e.target.value;refreshPick()}});
+$("#picker").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pk-q"&&$("#pk-add"))$("#pk-add").click()});
+function afterIngChange(d){if(DAYS.some(day=>S.week[day]===d.id))applyWeek(S);changed(true)}
+
+
+/* ---- Firebase: innlogging og synk ---- */
+const gate=$("#gate");
+function showGate(msg,btn){gate.hidden=false;$("#gate-msg").textContent=msg;$("#login").hidden=!btn}
+let unsub=null;
+function startSync(user){
+  ref=fdb.collection("lists").doc("main");
+  status("Kobler til…");
+  unsub=ref.onSnapshot(snap=>{
+    gate.hidden=true;
+    if(!snap.exists){ref.set(JSON.parse(JSON.stringify(S))).then(()=>status("Listen er opprettet"));return}
+    if(snap.metadata.hasPendingWrites||dirty||saving)return;
+    const d=snap.data();if(d&&Array.isArray(d.items)){
+      const selK=selItem&&key(selItem.n);
+      S=JSON.parse(JSON.stringify(d));try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
+      if(selK)selItem=findItem(selK)||null;
+      if(pickerDin||dayPick){pickerDin?refreshPick():null}else render();
+    }
+    status(snap.metadata.fromCache?"Frakoblet, endringer lagres når du er på nett igjen":"Synkronisert · "+(user.email||""));
+  },err=>{
+    if(err&&err.code==="permission-denied")showGate("Kontoen "+(user.email||"")+" har ikke tilgang til denne listen. Be eieren legge deg til.",true);
+    else status("Mistet synk, last appen på nytt");
+  });
+}
+render();
+let fdb=null;
+if(typeof firebaseConfig==="undefined"||!firebaseConfig.apiKey||/LIM_INN/.test(firebaseConfig.apiKey)){
+  showGate("Appen mangler Firebase-oppsett. Lim inn firebaseConfig i config.js.",false);
+}else{
+  firebase.initializeApp(firebaseConfig);
+  fdb=firebase.firestore();
+  fdb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+  const auth=firebase.auth();
+  auth.getRedirectResult().catch(()=>{});
+  auth.onAuthStateChanged(u=>{
+    if(unsub){unsub();unsub=null}
+    if(u){startSync(u)}else{ref=null;showGate("Logg inn for å se og synkronisere handlelisten.",true)}
+  });
+  $("#login").addEventListener("click",async()=>{
+    const p=new firebase.auth.GoogleAuthProvider();
+    try{await auth.signInWithPopup(p)}
+    catch(e){
+      if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"))auth.signInWithRedirect(p);
+      else if(e&&e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")showGate("Innlogging feilet: "+(e.code||e.message),true);
+    }
+  });
+  $("#logout").addEventListener("click",()=>auth.signOut());
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+</script>
+</body>
+</html>
