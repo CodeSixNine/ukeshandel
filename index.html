@@ -102,6 +102,14 @@ li.item.picked{background:var(--accent-soft)}
 .gate h1{margin:0}
 .gate p{max-width:32ch;color:var(--muted);margin:0}
 .linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.8rem;cursor:pointer;padding:4px}
+li.item .nm{flex:1;display:flex;flex-direction:column}
+li.item .by{color:var(--muted);font-size:.78rem}
+.step{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto}
+.qb{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:700 1.1rem var(--f-body);cursor:pointer;line-height:1;padding:0}
+.qb:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.qv{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:400}
+.qv.many{color:var(--accent);font-weight:700}
+.cq{color:var(--accent);font-weight:700}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 </head>
@@ -130,21 +138,39 @@ li.item.picked{background:var(--accent-soft)}
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const SEED={"dinners": [{"id": "taco", "ing": ["Tacolefse x 6", "Tacokrydder", "Tacosaus", "Kjøttdeig x 2", "Salat", "Agurk", "Paprika", "Gucamole krydder", "Revet ost x 2", "Nachos x", "Creme fraiche x 1"], "name": "Taco"}, {"id": "tomatpasta", "ing": ["Hakkede tomater", "Tomatpure", "Pasta penne"], "name": "Tomatpasta"}, {"id": "gyros", "ing": ["Pitabrød fryst x 2", "Salat", "Agurk", "Paprika", "Kyllingbiter", "Aiolo"], "name": "Gyros"}, {"id": "pestopasta", "ing": ["Pesto", "Fusli", "Fetaost", "Løk"], "name": "Pestopasta"}, {"id": "pizza", "ing": ["Pizzabunn", "Pizzasaus", "Pizzatopping x", "Revet ost x 2"], "name": "Pizza"}, {"id": "pai", "ing": ["Paibunn", "Egg", "Fløte", "Bacon x 2", "Revet ost x 2", "Frosne brokkoli"], "name": "Pai"}, {"id": "tomatsuppe", "ing": ["Tomatsuppe", "Egg"], "name": "Tomatsuppe"}], "items": [{"c": true, "n": "Pinjekjerner"}, {"c": true, "n": "Ferdig taco ting"}, {"c": true, "n": "Fløtegratinerte poteter x 2"}, {"c": true, "n": "Jordbær (to kurver???)"}, {"c": true, "n": "Bringebær"}, {"c": false, "n": "Agurk"}, {"c": false, "n": "Paprika"}, {"c": false, "n": "Salat"}, {"c": false, "n": "Rucola"}, {"c": true, "n": "Salatpose"}, {"c": true, "n": "Avocado"}, {"c": true, "n": "Banan"}, {"c": true, "n": "Druer (lilla!!!!!!!!!!!!!!!!!!!!!)"}, {"c": false, "n": "Løk"}, {"c": true, "n": "Hvitløk"}, {"c": true, "n": "Brokkoli"}, {"c": true, "n": "Blomkål"}, {"c": true, "n": "Gulrot"}, {"c": true, "n": "Potet"}, {"c": true, "n": "Kiwi x 2"}, {"c": true, "n": "Appelsin x 2"}, {"c": true, "n": "Eple x 2 grønn (ikke sure)"}, {"c": true, "n": "Jordbær om tilbud/billig"}, {"c": true, "n": "Sitrondråpa"}, {"c": true, "n": "Honning"}, {"c": true, "n": "Hvit monster x 2"}, {"c": true, "n": "Stor redbull vanlig"}, {"c": true, "n": "Focaccia"}, {"c": true, "n": "Gifflar x 2"}, {"c": true, "n": "Brød"}, {"c": true, "n": "Pølsebrød x 10"}, {"c": true, "n": "Hamburgerbrød"}, {"c": true, "n": "Bjørn Grøt x 5"}, {"c": false, "n": "Aiolo"}, {"c": false, "n": "Taziki"}, {"c": true, "n": "Pepperoni"}, {"c": false, "n": "Pizzatopping x"}, {"c": false, "n": "Pizzabunn"}, {"c": false, "n": "Pizzasaus"}, {"c": true, "n": "Pizzasaus (hvit)"}, {"c": true, "n": "Pinsabunn"}, {"c": false, "n": "Paibunn"}, {"c": false, "n": "Kjøttdeig x 2"}, {"c": true, "n": "Kjøttboller"}, {"c": true, "n": "Kyllingfilet x"}, {"c": true, "n": "Wok kjøtt"}, {"c": false, "n": "Kyllingbiter"}, {"c": true, "n": "Salatkylling"}, {"c": true, "n": "Salatkylling (Creol)"}, {"c": true, "n": "Pølse"}, {"c": true, "n": "Hamburger"}, {"c": true, "n": "Påleggskinke"}, {"c": true, "n": "Salami (Jubel)"}, {"c": true, "n": "Smårettskinke x"}, {"c": false, "n": "Bacon x 2"}, {"c": true, "n": "Spekeskinke"}, {"c": true, "n": "Grøt x 2"}, {"c": false, "n": "Fetaost"}, {"c": true, "n": "Kremgo (naturell)"}, {"c": true, "n": "Kremgo (urter)"}, {"c": true, "n": "Kremgo (krydder)"}, {"c": false, "n": "Revet ost x 2"}, {"c": false, "n": "Parmegano"}, {"c": true, "n": "Mozarella"}, {"c": true, "n": "Ost"}, {"c": true, "n": "Brunost"}, {"c": true, "n": "Majones"}, {"c": false, "n": "Egg"}, {"c": true, "n": "Pepper"}, {"c": true, "n": "Kanel"}, {"c": true, "n": "Gastromat"}, {"c": true, "n": "Hvitløkssalt"}, {"c": true, "n": "Paprikapulver"}, {"c": true, "n": "Oregano"}, {"c": true, "n": "Olivenolje"}, {"c": true, "n": "Sennep"}, {"c": true, "n": "Ketchup"}, {"c": true, "n": "Sprøstekt løk"}, {"c": true, "n": "Makrell i tomat x 3"}, {"c": true, "n": "Tørrgjær"}, {"c": true, "n": "Siktet hvetemel"}, {"c": true, "n": "Havregryn"}, {"c": true, "n": "Sammalt hvetemel (grov)"}, {"c": true, "n": "Kokesjokolade 400g"}, {"c": true, "n": "Brunt sukker"}, {"c": true, "n": "Sukker"}, {"c": true, "n": "Ovnsbakte grønnsaker"}, {"c": true, "n": "Hvitløksbaguetter x 2"}, {"c": false, "n": "Pitabrød fryst x 2"}, {"c": true, "n": "Rundstykker x 2"}, {"c": true, "n": "Frosne bringebær"}, {"c": true, "n": "Frosne Skogsbær"}, {"c": false, "n": "Frosne brokkoli"}, {"c": false, "n": "Pai grønnsaker"}, {"c": true, "n": "Wok grønnsaker"}, {"c": true, "n": "AD Chicken"}, {"c": true, "n": "AD Fries"}, {"c": true, "n": "Fries"}, {"c": true, "n": "Ferdigpizza"}, {"c": false, "n": "Tomatpure"}, {"c": false, "n": "Hakkede tomater"}, {"c": true, "n": "Toro brownies"}, {"c": true, "n": "Bakepulver"}, {"c": true, "n": "Melis"}, {"c": true, "n": "Idun karamell saus"}, {"c": true, "n": "Sodd"}, {"c": true, "n": "Lapskausblanding"}, {"c": true, "n": "Saft"}, {"c": false, "n": "Creme fraiche x 1"}, {"c": true, "n": "Rømme"}, {"c": true, "n": "Melk"}, {"c": false, "n": "Melange"}, {"c": true, "n": "Melk vanilje 1,75"}, {"c": false, "n": "Fløte"}, {"c": true, "n": "Biola naturell"}, {"c": true, "n": "God morgen Yoghurt (gul) x 2"}, {"c": true, "n": "Skogsbæryoghurt"}, {"c": true, "n": "Vaniljeyoghurt"}, {"c": true, "n": "Vita hjertegod"}, {"c": true, "n": "Soft flora lett"}, {"c": true, "n": "Margarin"}, {"c": false, "n": "Tacolefse x 6"}, {"c": false, "n": "Tacokrydder"}, {"c": false, "n": "Tacosaus"}, {"c": false, "n": "Guacamole"}, {"c": false, "n": "Gucamole krydder"}, {"c": false, "n": "Pesto"}, {"c": true, "n": "Bolognesse saus (Dolmio)"}, {"c": true, "n": "Sweet chilli"}, {"c": true, "n": "Fløtesaus (se på"}, {"c": true, "n": "Carbonara pose"}, {"c": true, "n": "Tandorri pose"}, {"c": true, "n": "Kyllingsaus"}, {"c": false, "n": "Tomatsuppe"}, {"c": true, "n": "Naan"}, {"c": true, "n": "Spaghetti"}, {"c": false, "n": "Fusli"}, {"c": true, "n": "Nudler"}, {"c": true, "n": "Rør pasta"}, {"c": false, "n": "Pasta penne"}, {"c": true, "n": "Makaroni"}, {"c": true, "n": "Ris"}, {"c": false, "n": "Nachos x"}, {"c": true, "n": "Sørlandschips Paprika"}, {"c": true, "n": "4-pakk med Smirnoff ice (bokser)"}, {"c": true, "n": "Aloha x 2"}, {"c": true, "n": "Snacks !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"}, {"c": true, "n": "Peppimeppi"}, {"c": true, "n": "Poo corn"}, {"c": true, "n": "Smør pakke"}, {"c": true, "n": "Smågodt rosa skaller rosa bubs"}, {"c": true, "n": "Sørlands spansk paprika"}, {"c": true, "n": "BBQ Ship"}, {"c": true, "n": "Kims salt potetgull"}, {"c": true, "n": "Smes"}, {"c": true, "n": "Sjoko crunch"}, {"c": true, "n": "Suprise me"}, {"c": true, "n": "New energy x 2"}, {"c": true, "n": "Cleanex"}, {"c": true, "n": "Tørkepapir"}, {"c": true, "n": "Dopapir"}, {"c": true, "n": "Bakepapir"}, {"c": true, "n": "Plastfolie"}, {"c": true, "n": "Plastpose"}, {"c": true, "n": "Søppelpose"}, {"c": true, "n": "Vaskebørste"}, {"c": true, "n": "Vaskemiddel (Klær)"}, {"c": true, "n": "Oppvaskmiddel"}, {"c": true, "n": "Jif Ovn"}, {"c": true, "n": "Zalo"}, {"c": true, "n": "Vaskehansker"}, {"c": true, "n": "Tannbørste hode"}, {"c": true, "n": "Tannbørste"}, {"c": true, "n": "Tannbørste små"}, {"c": true, "n": "Tannkrem x 2"}, {"c": true, "n": "Q-tips"}, {"c": true, "n": "Engangssprøyte"}, {"c": true, "n": "Deo lysegrønn aloe Vera"}, {"c": true, "n": "Asan med tranebær"}, {"c": true, "n": "Ibux"}, {"c": true, "n": "Bjørn"}, {"c": true, "n": "Tran"}, {"c": false, "n": "Spagetti"}, {"c": false, "n": "creme fraiche"}, {"c": false, "n": "cre"}], "notes": {"Lørdag": "Finn på no"}, "v": 1, "week": {"Fredag": "pizza", "Lørdag": "tomatsuppe", "Mandag": "taco", "Onsdag": "gyros", "Søndag": "pai", "Tirsdag": "tomatpasta", "Torsdag": "pestopasta"}};
 function key(s){return String(s).trim().toLowerCase()}
+function dq(din,k){return (din.qty&&din.qty[k])||1}
+function plannedMap(st){const p={},by={};for(const d of DAYS){const din=st.dinners.find(x=>x.id===st.week[d]);if(din)for(const i of din.ing){const k=key(i);p[k]=(p[k]||0)+dq(din,k);(by[k]=by[k]||[]).push(din.name)}}return {p,by}}
 function applyWeek(st){
-  const need=new Set();
-  for(const d of DAYS){const din=st.dinners.find(x=>x.id===st.week[d]);if(din)din.ing.forEach(i=>need.add(key(i)))}
-  for(const din of st.dinners)for(const i of din.ing){if(need.has(key(i))&&!st.items.some(it=>key(it.n)===key(i)))st.items.push({n:i,c:false})}
-  st.items.forEach(it=>{if(need.has(key(it.n)))it.c=false});
-  return need.size;
+  const {p}=plannedMap(st);
+  for(const din of st.dinners)for(const i of din.ing){if(p[key(i)]&&!st.items.some(it=>key(it.n)===key(i)))st.items.push({n:i,c:false,q:1})}
+  st.items.forEach(it=>{if(p[key(it.n)])it.c=false});
+  return Object.keys(p).length;
 }
+function splitQ(s){const m=String(s).match(/^(.*?)\s+x\s*(\d+)?\s*$/i);return m&&m[1].trim()?{n:m[1].trim(),q:m[2]?Math.max(1,+m[2]):1}:{n:String(s).trim(),q:1}}
+function migrate(st){
+  if(!st||st.v>=2)return false;
+  const out=[],idx={};
+  for(const it of st.items){const s=splitQ(it.n),k=key(s.n);
+    if(k in idx){const o=out[idx[k]];o.q=Math.max(o.q,s.q);o.c=o.c&&it.c}
+    else{idx[k]=out.length;out.push({n:s.n,c:!!it.c,q:s.q})}}
+  st.items=out;
+  for(const d of st.dinners){const seen=new Set(),ing=[];for(const i of d.ing){const s=splitQ(i),k=key(s.n);if(!seen.has(k)){seen.add(k);ing.push(s.n)}}d.ing=ing;d.qty={}}
+  st.v=2;return true;
+}
+function itemQty(it){const k=key(it.n);return PL.p[k]?Math.max(1,PL.p[k]+(it.x||0)):(it.q||1)}
+function bumpQty(it,delta){const k=key(it.n),pp=plannedMap(S).p[k];
+  if(pp){const nx=(it.x||0)+delta;if(pp+nx<1)return;it.x=nx}
+  else{const nq=(it.q||1)+delta;if(nq<1)return;it.q=nq}
+  changed()}
 
 
-let S=JSON.parse(JSON.stringify(SEED));
+let S=JSON.parse(JSON.stringify(SEED));let PL={p:{},by:{}};
 let tab="liste", hideDone=false, db=null, ref=null, saving=false, dirty=false, saveTimer=null, confirmReset=false;
 let dayPick=null, dayQ="", addQ="";
 let editMode=false, selItem=null, delArm=false, pickerDin=null, pickerQ="";
 try{tab=localStorage.getItem("tab")||"liste";hideDone=localStorage.getItem("hide")==="1"}catch(e){}
 try{const l=localStorage.getItem("state");if(l)S=JSON.parse(l)}catch(e){}
+migrate(S);
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -181,7 +207,9 @@ function findItem(n){return S.items.find(it=>key(it.n)===key(n))}
 function itemLi(ix){
   const it=S.items[ix];
   if(editMode)return `<li class="item edit${it===selItem?" sel":""}" data-ix="${ix}"><span class="grip" aria-hidden="true">⋮⋮</span><span>${esc(it.n)}</span></li>`;
-  return `<li class="item${it.c?" on":""}" data-ix="${ix}"><input type="checkbox" id="c${ix}" ${it.c?"checked":""} tabindex="-1" aria-label="${esc(it.n)}"><span>${esc(it.n)}</span></li>`;
+  const k=key(it.n),qn=itemQty(it),by=PL.by[k];
+  const step=it.c?"":`<span class="step"><button class="qb" data-qd="-1" data-qi="${ix}" aria-label="Færre ${esc(it.n)}">−</button><b class="qv${qn>1?" many":""}">${qn}</b><button class="qb" data-qd="1" data-qi="${ix}" aria-label="Flere ${esc(it.n)}">+</button></span>`;
+  return `<li class="item${it.c?" on":""}" data-ix="${ix}"><input type="checkbox" id="c${ix}" ${it.c?"checked":""} tabindex="-1" aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}${by&&!it.c?`<small class="by">${esc(by.join(" · "))}</small>`:""}</span>${step}</li>`;
 }
 function addMatches(){const q=key(addQ);if(!q)return[];return S.items.filter(it=>key(it.n).includes(q))}
 function addResHtml(){
@@ -231,7 +259,7 @@ function renderMiddager(){
   let h=`<h2>Dine middager</h2><div class="groups">`;
   for(const d of S.dinners){
     h+=`<div class="group dish"><div class="ghead"><b>${esc(d.name)}</b><button class="btn small" data-deldin="${esc(d.id)}">Slett</button></div>
-    <div class="chips">${d.ing.map((i,k)=>`<span class="chip">${esc(i)}<button data-din="${esc(d.id)}" data-delk="${k}" aria-label="Fjern ${esc(i)}">×</button></span>`).join("")||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
+    <div class="chips">${d.ing.map((i,k)=>`<span class="chip">${esc(i)}${dq(d,key(i))>1?` <b class="cq">×${dq(d,key(i))}</b>`:""}<button data-din="${esc(d.id)}" data-delk="${k}" aria-label="Fjern ${esc(i)}">×</button></span>`).join("")||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
     <div class="addline"><button class="btn small primary" data-pick="${esc(d.id)}">Velg ingredienser fra listen</button></div></div>`;
   }
   h+=`</div><div class="toolbar"><input type="text" id="newdin" placeholder="Ny middag, f.eks. Lasagne"><button class="btn primary" id="adddin">Lag middag</button></div>`;
@@ -243,7 +271,7 @@ function pickListHtml(){
   const d=S.dinners.find(x=>x.id===pickerDin);if(!d)return"";
   const q=key(pickerQ),inDin=new Set(d.ing.map(key));
   const rows=S.items.filter(it=>!q||key(it.n).includes(q));
-  let h=rows.map(it=>`<li class="item${inDin.has(key(it.n))?" picked":""}" data-pk="${esc(key(it.n))}"><input type="checkbox" tabindex="-1" ${inDin.has(key(it.n))?"checked":""} aria-label="${esc(it.n)}"><span>${esc(it.n)}</span></li>`).join("");
+  let h=rows.map(it=>`<li class="item${inDin.has(key(it.n))?" picked":""}" data-pk="${esc(key(it.n))}"><input type="checkbox" tabindex="-1" ${inDin.has(key(it.n))?"checked":""} aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}</span>${inDin.has(key(it.n))?`<span class="step"><button class="qb" data-dq="-1" data-dk="${esc(key(it.n))}" aria-label="Færre">−</button><b class="qv${dq(d,key(it.n))>1?" many":""}">${dq(d,key(it.n))}</b><button class="qb" data-dq="1" data-dk="${esc(key(it.n))}" aria-label="Flere">+</button></span>`:""}</li>`).join("");
   if(!rows.length)h=`<li class="empty">Ingen varer i listen matcher «${esc(pickerQ)}»</li>`;
   return h;
 }
@@ -282,6 +310,7 @@ function refreshPick(){$("#pk-list").innerHTML=pickListHtml();$("#pk-new").inner
 function closePicker(){pickerDin=null;pickerQ="";renderPicker();render()}
 
 function render(){
+  PL=plannedMap(S);
   document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
   if(selItem&&!S.items.includes(selItem))selItem=null;
   document.body.classList.toggle("editing",!!(editMode&&selItem));
@@ -292,6 +321,8 @@ function render(){
 document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;confirmReset=false;editMode=false;selItem=null;try{localStorage.setItem("tab",tab)}catch(_){};render()});
 $("#view").addEventListener("click",e=>{
   const t=e.target;
+  const qb=t.closest("button.qb");
+  if(qb&&qb.dataset.qi!==undefined){bumpQty(S.items[+qb.dataset.qi],+qb.dataset.qd);return}
   const rs=t.closest("li.res");
   if(rs){const it=findItem(rs.dataset.ak);if(it)pickExisting(it);return}
   const li=t.closest("li.item");
@@ -304,13 +335,13 @@ $("#view").addEventListener("click",e=>{
   if(t.dataset.dayp){dayPick=t.dataset.dayp;dayQ="";renderPicker();return}
   if(t.id==="mv-done"){selItem=null;delArm=false;render();return}
   if(t.id==="mv-del"){if(!delArm){delArm=true;render();return}
-    const k=key(selItem.n);S.items.splice(S.items.indexOf(selItem),1);S.dinners.forEach(d=>d.ing=d.ing.filter(i=>key(i)!==k));toast(selItem.n+" slettet");selItem=null;delArm=false;changed();return}
+    const k=key(selItem.n);S.items.splice(S.items.indexOf(selItem),1);S.dinners.forEach(d=>{d.ing=d.ing.filter(i=>key(i)!==k);if(d.qty)delete d.qty[k]});toast(selItem.n+" slettet");selItem=null;delArm=false;changed();return}
   if(t.id==="additem"){addItem();return}
   if(t.id==="newweek"){confirmReset=true;render();return}
   if(t.id==="noreset"){confirmReset=false;render();return}
   if(t.id==="yesreset"){const need=new Set();for(const d of DAYS){const din=S.dinners.find(x=>x.id===S.week[d]);if(din)din.ing.forEach(i=>need.add(key(i)))}
-    S.items.forEach(it=>it.c=!need.has(key(it.n)));confirmReset=false;changed();toast("Klar for ny uke");return}
-  if(t.dataset.delk!==undefined){const d=S.dinners.find(x=>x.id===t.dataset.din);d.ing.splice(+t.dataset.delk,1);changed();return}
+    S.items.forEach(it=>{it.c=!need.has(key(it.n));it.x=0});confirmReset=false;changed();toast("Klar for ny uke");return}
+  if(t.dataset.delk!==undefined){const d=S.dinners.find(x=>x.id===t.dataset.din);const [rm]=d.ing.splice(+t.dataset.delk,1);if(d.qty)delete d.qty[key(rm)];changed();return}
   if(t.dataset.pick){pickerDin=t.dataset.pick;pickerQ="";renderPicker();return}
   if(t.dataset.deldin){const id=t.dataset.deldin;S.dinners=S.dinners.filter(x=>x.id!==id);for(const d of DAYS)if(S.week[d]===id)S.week[d]="";changed();return}
   if(t.id==="adddin"){const v=$("#newdin").value.trim();if(!v)return;let id=key(v).replace(/[^a-z0-9æøå]+/g,"-")||"m";while(S.dinners.some(x=>x.id===id))id+="-2";S.dinners.push({id,name:v,ing:[]});changed();pickerDin=id;pickerQ="";renderPicker()}
@@ -325,7 +356,7 @@ function renameSel(){
   const v=$("#mv-name").value.trim();if(!v||!selItem||v===selItem.n)return;
   const other=findItem(v);if(other&&other!==selItem){toast(v+" finnes allerede i listen");return}
   const old=key(selItem.n);
-  S.dinners.forEach(d=>d.ing=d.ing.map(i=>key(i)===old?v:i));
+  S.dinners.forEach(d=>{d.ing=d.ing.map(i=>key(i)===old?v:i);if(d.qty&&d.qty[old]!=null){d.qty[key(v)]=d.qty[old];delete d.qty[old]}});
   selItem.n=v;changed();toast("Navn endret");
 }
 $("#view").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.target;if(t.id==="mv-name"){renameSel();return}if(t.id==="newitem")addItem();else if(t.id==="newdin")$("#adddin").click()});
@@ -335,7 +366,7 @@ function addItem(){const v=addQ.trim();if(!v)return;
   const m=addMatches();
   if(!$("#newpos")){const ex=findItem(v)||(m.length===1?m[0]:null);if(ex){if(ex.c)pickExisting(ex);else toast(ex.n+" står allerede på listen");}return}
   const pos=$("#newpos").value;addQ="";
-  let it=findItem(v);if(it){it.c=false;toast(it.n+" finnes allerede, uavhuket")}else{it={n:v,c:false};placeAt(it,pos);toast(v+" lagt til")}
+  const sq=splitQ(v);let it=findItem(sq.n);if(it){it.c=false;toast(it.n+" finnes allerede, uavhuket")}else{it={n:sq.n,c:false,q:sq.q};placeAt(it,pos);toast(sq.n+" lagt til")}
   changed();setTimeout(()=>$("#newitem")&&$("#newitem").focus(),0)}
 
 /* velger-hendelser */
@@ -347,13 +378,15 @@ $("#picker").addEventListener("click",e=>{
     const li=t.closest("li.item");if(!li)return;setDay(li.dataset.did);dayPick=null;renderPicker();render();return}
   const t=e.target,d=S.dinners.find(x=>x.id===pickerDin);if(!d)return;
   if(t.id==="pk-done"){closePicker();return}
-  if(t.id==="pk-add"){const q=pickerQ.trim();if(!q)return;const it={n:q,c:true};placeAt(it,$("#pk-pos").value);d.ing.push(q);afterIngChange(d);pickerQ="";$("#pk-q").value="";refreshPick();toast(q+" lagt til");return}
+  if(t.id==="pk-add"){const sq=splitQ(pickerQ.trim());if(!sq.n)return;const q=sq.n;const it={n:q,c:true,q:1};placeAt(it,$("#pk-pos").value);d.ing.push(q);if(sq.q>1){d.qty=d.qty||{};d.qty[key(q)]=sq.q}afterIngChange(d);pickerQ="";$("#pk-q").value="";refreshPick();toast(q+" lagt til");return}
+  const qb=t.closest("button.qb");
+  if(qb){const k=qb.dataset.dk;d.qty=d.qty||{};const n=Math.max(1,dq(d,k)+ +qb.dataset.dq);if(n===1)delete d.qty[k];else d.qty[k]=n;afterIngChange(d);refreshPick();return}
   const li=t.closest("li.item");if(!li)return;
   const it=findItem(li.dataset.pk);if(!it)return;
   const has=d.ing.some(i=>key(i)===key(it.n));
-  if(has)d.ing=d.ing.filter(i=>key(i)!==key(it.n));else d.ing.push(it.n);
+  if(has){d.ing=d.ing.filter(i=>key(i)!==key(it.n));if(d.qty)delete d.qty[key(it.n)]}else d.ing.push(it.n);
   afterIngChange(d);
-  li.classList.toggle("picked",!has);li.querySelector("input").checked=!has;
+  refreshPick();
 });
 $("#picker").addEventListener("input",e=>{if(e.target.id==="dp-q"){dayQ=e.target.value;$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml();return}if(e.target.id==="pk-q"){pickerQ=e.target.value;refreshPick()}});
 $("#picker").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pk-q"&&$("#pk-add"))$("#pk-add").click()});
@@ -373,7 +406,7 @@ function startSync(user){
     if(snap.metadata.hasPendingWrites||dirty||saving)return;
     const d=snap.data();if(d&&Array.isArray(d.items)){
       const selK=selItem&&key(selItem.n);
-      S=JSON.parse(JSON.stringify(d));try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
+      S=JSON.parse(JSON.stringify(d));if(migrate(S)){changed(true)}try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
       if(selK)selItem=findItem(selK)||null;
       if(pickerDin||dayPick){pickerDin?refreshPick():null}else render();
     }
