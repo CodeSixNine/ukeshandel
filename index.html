@@ -68,7 +68,6 @@ label.tog{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.
 li.item.edit{gap:10px}
 li.item.edit .grip{color:var(--muted);font-size:.9rem;letter-spacing:-2px;flex:none}
 li.item.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
-body.editing .wrap{padding-bottom:220px}
 .panel{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:10px;padding-top:12px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .panel .ptitle{font-family:var(--f-display);font-weight:600;font-size:1.05rem;overflow-wrap:anywhere}
 .panel select{flex:1 1 160px}
@@ -114,6 +113,30 @@ li.item .by{color:var(--muted);font-size:.78rem}
 .qv{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:400}
 .qv.many{color:var(--accent);font-weight:700}
 .cq{color:var(--accent);font-weight:700}
+li.item .note{color:var(--accent);font-size:.8rem}
+li.sec{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 14px 6px;border-top:1px solid var(--line);background:var(--bg)}
+.rest li.sec:first-child{border-top:0}
+.secbtn{display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px 0;color:var(--ink);font:600 1rem var(--f-display);cursor:pointer;text-align:left}
+.secbtn .chev{color:var(--muted);width:1em;display:inline-block}
+li.sec small{color:var(--muted);font-size:.8rem;flex:none}
+li.sec small.left{color:var(--accent);font-weight:700}
+li.item.hdr{background:var(--bg)}
+.pkh{padding:12px 14px 4px;font:600 .85rem var(--f-display);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--line)}
+.pklist .pkh:first-child{border-top:0}
+.shopbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);padding-block:12px;color:var(--muted)}
+.shopbar .big{font-family:var(--f-display);font-size:1.6rem;color:var(--ink)}
+.shsec{font:600 .85rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
+ul.shop{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+li.sh{display:flex;align-items:center;gap:14px;padding:15px 16px;border-top:1px solid var(--line);cursor:pointer;user-select:none;font-size:1.12rem}
+li.sh:first-child{border-top:0}
+li.sh .box{width:26px;height:26px;border-radius:7px;border:2px solid var(--muted);flex:none;display:grid;place-items:center;font-size:.9rem;color:var(--bg)}
+li.sh .box.on{background:var(--accent);border-color:var(--accent)}
+li.sh .nm{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}
+li.sh .shq{color:var(--accent);font-family:var(--f-display);font-size:1.2rem;flex:none}
+li.sh.done .nm{color:var(--done);text-decoration:line-through}
+.basket{margin-top:20px}
+.basket summary{cursor:pointer;color:var(--muted);font-weight:700;padding:8px 0}
+body.editing .wrap{padding-bottom:440px}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 </head>
@@ -138,288 +161,401 @@ li.item .by{color:var(--muted);font-size:.78rem}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script>
-
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const SEED={"dinners": [{"id": "taco", "ing": ["Tacolefse x 6", "Tacokrydder", "Tacosaus", "Kjøttdeig x 2", "Salat", "Agurk", "Paprika", "Gucamole krydder", "Revet ost x 2", "Nachos x", "Creme fraiche x 1"], "name": "Taco"}, {"id": "tomatpasta", "ing": ["Hakkede tomater", "Tomatpure", "Pasta penne"], "name": "Tomatpasta"}, {"id": "gyros", "ing": ["Pitabrød fryst x 2", "Salat", "Agurk", "Paprika", "Kyllingbiter", "Aiolo"], "name": "Gyros"}, {"id": "pestopasta", "ing": ["Pesto", "Fusli", "Fetaost", "Løk"], "name": "Pestopasta"}, {"id": "pizza", "ing": ["Pizzabunn", "Pizzasaus", "Pizzatopping x", "Revet ost x 2"], "name": "Pizza"}, {"id": "pai", "ing": ["Paibunn", "Egg", "Fløte", "Bacon x 2", "Revet ost x 2", "Frosne brokkoli"], "name": "Pai"}, {"id": "tomatsuppe", "ing": ["Tomatsuppe", "Egg"], "name": "Tomatsuppe"}], "items": [{"c": true, "n": "Pinjekjerner"}, {"c": true, "n": "Ferdig taco ting"}, {"c": true, "n": "Fløtegratinerte poteter x 2"}, {"c": true, "n": "Jordbær (to kurver???)"}, {"c": true, "n": "Bringebær"}, {"c": false, "n": "Agurk"}, {"c": false, "n": "Paprika"}, {"c": false, "n": "Salat"}, {"c": false, "n": "Rucola"}, {"c": true, "n": "Salatpose"}, {"c": true, "n": "Avocado"}, {"c": true, "n": "Banan"}, {"c": true, "n": "Druer (lilla!!!!!!!!!!!!!!!!!!!!!)"}, {"c": false, "n": "Løk"}, {"c": true, "n": "Hvitløk"}, {"c": true, "n": "Brokkoli"}, {"c": true, "n": "Blomkål"}, {"c": true, "n": "Gulrot"}, {"c": true, "n": "Potet"}, {"c": true, "n": "Kiwi x 2"}, {"c": true, "n": "Appelsin x 2"}, {"c": true, "n": "Eple x 2 grønn (ikke sure)"}, {"c": true, "n": "Jordbær om tilbud/billig"}, {"c": true, "n": "Sitrondråpa"}, {"c": true, "n": "Honning"}, {"c": true, "n": "Hvit monster x 2"}, {"c": true, "n": "Stor redbull vanlig"}, {"c": true, "n": "Focaccia"}, {"c": true, "n": "Gifflar x 2"}, {"c": true, "n": "Brød"}, {"c": true, "n": "Pølsebrød x 10"}, {"c": true, "n": "Hamburgerbrød"}, {"c": true, "n": "Bjørn Grøt x 5"}, {"c": false, "n": "Aiolo"}, {"c": false, "n": "Taziki"}, {"c": true, "n": "Pepperoni"}, {"c": false, "n": "Pizzatopping x"}, {"c": false, "n": "Pizzabunn"}, {"c": false, "n": "Pizzasaus"}, {"c": true, "n": "Pizzasaus (hvit)"}, {"c": true, "n": "Pinsabunn"}, {"c": false, "n": "Paibunn"}, {"c": false, "n": "Kjøttdeig x 2"}, {"c": true, "n": "Kjøttboller"}, {"c": true, "n": "Kyllingfilet x"}, {"c": true, "n": "Wok kjøtt"}, {"c": false, "n": "Kyllingbiter"}, {"c": true, "n": "Salatkylling"}, {"c": true, "n": "Salatkylling (Creol)"}, {"c": true, "n": "Pølse"}, {"c": true, "n": "Hamburger"}, {"c": true, "n": "Påleggskinke"}, {"c": true, "n": "Salami (Jubel)"}, {"c": true, "n": "Smårettskinke x"}, {"c": false, "n": "Bacon x 2"}, {"c": true, "n": "Spekeskinke"}, {"c": true, "n": "Grøt x 2"}, {"c": false, "n": "Fetaost"}, {"c": true, "n": "Kremgo (naturell)"}, {"c": true, "n": "Kremgo (urter)"}, {"c": true, "n": "Kremgo (krydder)"}, {"c": false, "n": "Revet ost x 2"}, {"c": false, "n": "Parmegano"}, {"c": true, "n": "Mozarella"}, {"c": true, "n": "Ost"}, {"c": true, "n": "Brunost"}, {"c": true, "n": "Majones"}, {"c": false, "n": "Egg"}, {"c": true, "n": "Pepper"}, {"c": true, "n": "Kanel"}, {"c": true, "n": "Gastromat"}, {"c": true, "n": "Hvitløkssalt"}, {"c": true, "n": "Paprikapulver"}, {"c": true, "n": "Oregano"}, {"c": true, "n": "Olivenolje"}, {"c": true, "n": "Sennep"}, {"c": true, "n": "Ketchup"}, {"c": true, "n": "Sprøstekt løk"}, {"c": true, "n": "Makrell i tomat x 3"}, {"c": true, "n": "Tørrgjær"}, {"c": true, "n": "Siktet hvetemel"}, {"c": true, "n": "Havregryn"}, {"c": true, "n": "Sammalt hvetemel (grov)"}, {"c": true, "n": "Kokesjokolade 400g"}, {"c": true, "n": "Brunt sukker"}, {"c": true, "n": "Sukker"}, {"c": true, "n": "Ovnsbakte grønnsaker"}, {"c": true, "n": "Hvitløksbaguetter x 2"}, {"c": false, "n": "Pitabrød fryst x 2"}, {"c": true, "n": "Rundstykker x 2"}, {"c": true, "n": "Frosne bringebær"}, {"c": true, "n": "Frosne Skogsbær"}, {"c": false, "n": "Frosne brokkoli"}, {"c": false, "n": "Pai grønnsaker"}, {"c": true, "n": "Wok grønnsaker"}, {"c": true, "n": "AD Chicken"}, {"c": true, "n": "AD Fries"}, {"c": true, "n": "Fries"}, {"c": true, "n": "Ferdigpizza"}, {"c": false, "n": "Tomatpure"}, {"c": false, "n": "Hakkede tomater"}, {"c": true, "n": "Toro brownies"}, {"c": true, "n": "Bakepulver"}, {"c": true, "n": "Melis"}, {"c": true, "n": "Idun karamell saus"}, {"c": true, "n": "Sodd"}, {"c": true, "n": "Lapskausblanding"}, {"c": true, "n": "Saft"}, {"c": false, "n": "Creme fraiche x 1"}, {"c": true, "n": "Rømme"}, {"c": true, "n": "Melk"}, {"c": false, "n": "Melange"}, {"c": true, "n": "Melk vanilje 1,75"}, {"c": false, "n": "Fløte"}, {"c": true, "n": "Biola naturell"}, {"c": true, "n": "God morgen Yoghurt (gul) x 2"}, {"c": true, "n": "Skogsbæryoghurt"}, {"c": true, "n": "Vaniljeyoghurt"}, {"c": true, "n": "Vita hjertegod"}, {"c": true, "n": "Soft flora lett"}, {"c": true, "n": "Margarin"}, {"c": false, "n": "Tacolefse x 6"}, {"c": false, "n": "Tacokrydder"}, {"c": false, "n": "Tacosaus"}, {"c": false, "n": "Guacamole"}, {"c": false, "n": "Gucamole krydder"}, {"c": false, "n": "Pesto"}, {"c": true, "n": "Bolognesse saus (Dolmio)"}, {"c": true, "n": "Sweet chilli"}, {"c": true, "n": "Fløtesaus (se på"}, {"c": true, "n": "Carbonara pose"}, {"c": true, "n": "Tandorri pose"}, {"c": true, "n": "Kyllingsaus"}, {"c": false, "n": "Tomatsuppe"}, {"c": true, "n": "Naan"}, {"c": true, "n": "Spaghetti"}, {"c": false, "n": "Fusli"}, {"c": true, "n": "Nudler"}, {"c": true, "n": "Rør pasta"}, {"c": false, "n": "Pasta penne"}, {"c": true, "n": "Makaroni"}, {"c": true, "n": "Ris"}, {"c": false, "n": "Nachos x"}, {"c": true, "n": "Sørlandschips Paprika"}, {"c": true, "n": "4-pakk med Smirnoff ice (bokser)"}, {"c": true, "n": "Aloha x 2"}, {"c": true, "n": "Snacks !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"}, {"c": true, "n": "Peppimeppi"}, {"c": true, "n": "Poo corn"}, {"c": true, "n": "Smør pakke"}, {"c": true, "n": "Smågodt rosa skaller rosa bubs"}, {"c": true, "n": "Sørlands spansk paprika"}, {"c": true, "n": "BBQ Ship"}, {"c": true, "n": "Kims salt potetgull"}, {"c": true, "n": "Smes"}, {"c": true, "n": "Sjoko crunch"}, {"c": true, "n": "Suprise me"}, {"c": true, "n": "New energy x 2"}, {"c": true, "n": "Cleanex"}, {"c": true, "n": "Tørkepapir"}, {"c": true, "n": "Dopapir"}, {"c": true, "n": "Bakepapir"}, {"c": true, "n": "Plastfolie"}, {"c": true, "n": "Plastpose"}, {"c": true, "n": "Søppelpose"}, {"c": true, "n": "Vaskebørste"}, {"c": true, "n": "Vaskemiddel (Klær)"}, {"c": true, "n": "Oppvaskmiddel"}, {"c": true, "n": "Jif Ovn"}, {"c": true, "n": "Zalo"}, {"c": true, "n": "Vaskehansker"}, {"c": true, "n": "Tannbørste hode"}, {"c": true, "n": "Tannbørste"}, {"c": true, "n": "Tannbørste små"}, {"c": true, "n": "Tannkrem x 2"}, {"c": true, "n": "Q-tips"}, {"c": true, "n": "Engangssprøyte"}, {"c": true, "n": "Deo lysegrønn aloe Vera"}, {"c": true, "n": "Asan med tranebær"}, {"c": true, "n": "Ibux"}, {"c": true, "n": "Bjørn"}, {"c": true, "n": "Tran"}, {"c": false, "n": "Spagetti"}, {"c": false, "n": "creme fraiche"}, {"c": false, "n": "cre"}], "notes": {"Lørdag": "Finn på no"}, "v": 1, "week": {"Fredag": "pizza", "Lørdag": "tomatsuppe", "Mandag": "taco", "Onsdag": "gyros", "Søndag": "pai", "Tirsdag": "tomatpasta", "Torsdag": "pestopasta"}};
+/* ===== Hjelpere og datamodell (v3) =====
+   items:   {id: {n, c, q, x, o, note?, h?}}  h = avdelingsoverskrift, o = rekkefølge
+   dinners: {id: {name, ing:[itemId], qty:{itemId:n}, o}}
+   week:    {Mandag: dinnerId}
+   Lagres med feltvise oppdateringer, så to personer kan endre samtidig. */
 function key(s){return String(s).trim().toLowerCase()}
-function dq(din,k){return (din.qty&&din.qty[k])||1}
-function plannedMap(st){const p={},by={};for(const d of DAYS){const din=st.dinners.find(x=>x.id===st.week[d]);if(din)for(const i of din.ing){const k=key(i);p[k]=(p[k]||0)+dq(din,k);(by[k]=by[k]||[]).push(din.name)}}return {p,by}}
-function applyWeek(st){
-  const {p}=plannedMap(st);
-  for(const din of st.dinners)for(const i of din.ing){if(p[key(i)]&&!st.items.some(it=>key(it.n)===key(i)))st.items.push({n:i,c:false,q:1})}
-  st.items.forEach(it=>{if(p[key(it.n)])it.c=false});
-  return Object.keys(p).length;
-}
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function splitQ(s){const m=String(s).match(/^(.*?)\s+x\s*(\d+)?\s*$/i);return m&&m[1].trim()?{n:m[1].trim(),q:m[2]?Math.max(1,+m[2]):1}:{n:String(s).trim(),q:1}}
-function migrate(st){
-  if(!st||st.v>=2)return false;
+function migrateV2(st){
+  if(st.v>=2)return st;
   const out=[],idx={};
-  for(const it of st.items){const s=splitQ(it.n),k=key(s.n);
+  for(const it of st.items||[]){const s=splitQ(it.n),k=key(s.n);
     if(k in idx){const o=out[idx[k]];o.q=Math.max(o.q,s.q);o.c=o.c&&it.c}
     else{idx[k]=out.length;out.push({n:s.n,c:!!it.c,q:s.q})}}
   st.items=out;
-  for(const d of st.dinners){const seen=new Set(),ing=[];for(const i of d.ing){const s=splitQ(i),k=key(s.n);if(!seen.has(k)){seen.add(k);ing.push(s.n)}}d.ing=ing;d.qty={}}
-  st.v=2;return true;
+  for(const d of st.dinners||[]){const seen=new Set(),ing=[];for(const i of d.ing){const s=splitQ(i),k=key(s.n);if(!seen.has(k)){seen.add(k);ing.push(s.n)}}d.ing=ing;d.qty={}}
+  st.v=2;return st;
 }
-function itemQty(it){const k=key(it.n);return PL.p[k]?Math.max(1,PL.p[k]+(it.x||0)):(it.q||1)}
-function bumpQty(it,delta){const k=key(it.n),pp=plannedMap(S).p[k];
-  if(pp){const nx=(it.x||0)+delta;if(pp+nx<1)return;it.x=nx}
-  else{const nq=(it.q||1)+delta;if(nq<1)return;it.q=nq}
-  changed()}
+const HDR={"pinjekjerner":"Frukt og grønt","hvit monster":"Drikke","focaccia":"Brød","aiolo":"Kjøl","kjøttdeig":"Kjøtt og pålegg","fetaost":"Ost","pepper":"Krydder og sauser","makrell i tomat":"Hermetikk og baking","ovnsbakte grønnsaker":"Frys","tomatpure":"Tørrvarer","creme fraiche":"Meieri","tacolefse":"Taco","pesto":"Middag og pasta","nachos":"Snacks og godteri","cleanex":"Husholdning","tannbørste hode":"Hygiene og apotek"};
+function toV3(src){
+  const d=clone(src);
+  if(d.v>=3)return d;
+  migrateV2(d);
+  const items={},idBy={};let o=0;
+  for(const it of d.items||[]){
+    const k=key(it.n);
+    if(HDR[k])items[uid("h")]={n:HDR[k],h:true,o:o+=1000};
+    if(idBy[k])continue;
+    const id=uid("i");idBy[k]=id;
+    items[id]={n:it.n,c:!!it.c,q:it.q||1,x:it.x||0,o:o+=1000};
+  }
+  const dinners={},dmap={};let i=0;
+  for(const dn of d.dinners||[]){
+    const ing=[],qty={};
+    for(const nm of dn.ing||[]){
+      let id=idBy[key(nm)];
+      if(!id){id=uid("i");idBy[key(nm)]=id;items[id]={n:nm,c:true,q:1,x:0,o:o+=1000}}
+      if(!ing.includes(id))ing.push(id);
+      const qv=dn.qty&&dn.qty[key(nm)];if(qv>1)qty[id]=qv;
+    }
+    const nid=uid("d");dmap[dn.id]=nid;
+    dinners[nid]={name:dn.name,ing,qty,o:i++};
+  }
+  const week={};for(const day of DAYS)week[day]=dmap[(d.week||{})[day]]||"";
+  return {v:3,items,dinners,week};
+}
 
-
-let S=JSON.parse(JSON.stringify(SEED));let PL={p:{},by:{}};
-let tab="liste", hideDone=false, db=null, ref=null, saving=false, dirty=false, saveTimer=null, confirmReset=false;
-let dayPick=null, dayQ="", addQ="", mvQ="";
-let editMode=false, selItem=null, delArm=false, pickerDin=null, pickerQ="";
-try{tab=localStorage.getItem("tab")||"liste";hideDone=localStorage.getItem("hide")==="1"}catch(e){}
-try{const l=localStorage.getItem("state");if(l)S=JSON.parse(l)}catch(e){}
-migrate(S);
+let S=toV3(SEED),B=null,PL={p:{},by:{}};
+let tab="liste",hideDone=false,shop=false,trip=[],col=[],ref=null,saveTimer=null,confirmReset=false;
+let dayPick=null,dayQ="",addQ="",mvQ="",editMode=false,selId=null,delArm=false,pickerDin=null,pickerQ="",lastPos="end";
+function ls(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+tab=ls("tab","liste");hideDone=ls("hide2",false);shop=ls("shop",false);trip=ls("trip",[]);col=ls("col",[]);lastPos=ls("pos","end");
 
 const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)}
 function status(m){$("#status").textContent=m}
 
-function changed(noRender){
-  try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
-  dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(save,700);if(!noRender)render();
-}
-async function save(){
-  if(!ref||saving)return;
-  saving=true;dirty=false;
-  try{await ref.set(JSON.parse(JSON.stringify(S)));status("Lagret")}
-  catch(e){status(e&&e.code==="permission-denied"?"Du har ikke tilgang til å endre listen":"Kunne ikke lagre nå, prøver igjen ved neste endring")}
-  saving=false;if(dirty)save();
-}
+const I=id=>S.items[id];
+function ids(){return Object.keys(S.items).sort((a,b)=>(S.items[a].o-S.items[b].o)||(a<b?-1:a>b?1:0))}
+function itemIds(){return ids().filter(id=>!S.items[id].h)}
+function findByName(n){const k=key(n);return Object.keys(S.items).find(id=>!S.items[id].h&&key(S.items[id].n)===k)}
+function dinnerIds(){return Object.keys(S.dinners).sort((a,b)=>(S.dinners[a].o||0)-(S.dinners[b].o||0))}
+function secOf(){const m={};let cur=null;for(const id of ids()){if(I(id).h)cur=id;else m[id]=cur}return m}
 
-/* ---- placering i listen ---- */
-function posOptions(exclude){
-  let o=`<option value="end">Nederst</option><option value="top">Øverst</option>`;
-  for(const it of S.items){if(exclude&&it===exclude)continue;o+=`<option value="k:${esc(key(it.n))}">Etter: ${esc(it.n)}</option>`}
+/* ---- rekkefølge ---- */
+function renorm(){ids().forEach((id,i)=>S.items[id].o=(i+1)*1000)}
+function placeAt(id,pos){
+  const arr=ids().filter(x=>x!==id),last=arr.length?I(arr[arr.length-1]).o:0;
+  if(pos&&pos.sec){const hi=arr.indexOf(pos.sec);if(hi<0)pos="end";else{let j=hi;while(j+1<arr.length&&!I(arr[j+1]).h)j++;pos={after:arr[j]}}}
+  if(pos==="top"){I(id).o=(arr.length?I(arr[0]).o:0)-1000;return}
+  if(!pos||pos==="end"||!pos.after){I(id).o=last+1000;return}
+  const i=arr.indexOf(pos.after);if(i<0){I(id).o=last+1000;return}
+  const a=I(arr[i]).o,b=i+1<arr.length?I(arr[i+1]).o:a+2000;
+  if(b-a<1e-6){renorm();return placeAt(id,pos)}
+  I(id).o=(a+b)/2;
+}
+function parsePos(v){if(v==="top"||v==="end")return v;if(v&&v.startsWith("s:"))return {sec:v.slice(2)};return "end"}
+function posOptions(sel){
+  let o=`<option value="end"${sel==="end"?" selected":""}>Nederst i listen</option><option value="top"${sel==="top"?" selected":""}>Øverst i listen</option>`;
+  for(const id of ids())if(I(id).h)o+=`<option value="s:${id}"${sel==="s:"+id?" selected":""}>Avdeling: ${esc(I(id).n)}</option>`;
   return o;
 }
-function placeAt(obj,pos){
-  const i=S.items.indexOf(obj);if(i>=0)S.items.splice(i,1);
-  if(pos==="top")S.items.unshift(obj);
-  else if(pos&&pos.startsWith("k:")){const t=S.items.findIndex(it=>key(it.n)===pos.slice(2));if(t>=0)S.items.splice(t+1,0,obj);else S.items.push(obj)}
-  else S.items.push(obj);
+
+/* ---- ukeplan og antall ---- */
+function planned(){const p={},by={};for(const d of DAYS){const din=S.dinners[S.week[d]];if(din)for(const id of din.ing||[]){if(!S.items[id])continue;p[id]=(p[id]||0)+((din.qty&&din.qty[id])||1);(by[id]=by[id]||[]).push(din.name)}}return {p,by}}
+function applyWeek(){const {p}=planned();for(const id in p)S.items[id].c=false}
+function qtyOf(id){const it=I(id);return PL.p[id]?Math.max(1,PL.p[id]+(it.x||0)):(it.q||1)}
+function bump(id,d){const it=I(id),pp=planned().p[id];
+  if(pp){const nx=(it.x||0)+d;if(pp+nx<1)return;it.x=nx}else{const nq=(it.q||1)+d;if(nq<1)return;it.q=nq}
+  changed()}
+function dq(din,id){return (din.qty&&din.qty[id])||1}
+
+/* ---- lagring: bare feltene som er endret ---- */
+function changed(noRender){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);if(!noRender)render()}
+function diffArgs(){
+  const FP=firebase.firestore.FieldPath,DEL=firebase.firestore.FieldValue.delete(),a=[];
+  const eq=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
+  for(const top of ["items","dinners"]){const s=S[top]||{},b=B[top]||{};
+    for(const id of new Set([...Object.keys(s),...Object.keys(b)])){
+      if(!(id in s)){a.push(new FP(top,id),DEL);continue}
+      if(!(id in b)){a.push(new FP(top,id),clone(s[id]));continue}
+      for(const f of new Set([...Object.keys(s[id]),...Object.keys(b[id])])){
+        if(eq(s[id][f],b[id][f]))continue;
+        a.push(new FP(top,id,f),s[id][f]===undefined?DEL:clone(s[id][f]));
+      }}}
+  for(const d of DAYS)if((S.week[d]||"")!==((B.week||{})[d]||""))a.push(new FP("week",d),S.week[d]||"");
+  return a;
 }
-function findItem(n){return S.items.find(it=>key(it.n)===key(n))}
+function save(){
+  saveTimer=null;if(!ref||!B)return;
+  const a=diffArgs();if(!a.length)return;
+  B=clone(S);
+  ref.update(...a).then(()=>status("Lagret")).catch(e=>status(e&&e.code==="permission-denied"?"Du har ikke tilgang til å endre listen":"Kunne ikke lagre ("+(e&&e.code||"ukjent feil")+")"));
+}
 
 /* ---- handleliste ---- */
-function itemLi(ix){
-  const it=S.items[ix];
-  if(editMode)return `<li class="item edit${it===selItem?" sel":""}" data-ix="${ix}"><span class="grip" aria-hidden="true">⋮⋮</span><span>${esc(it.n)}</span></li>`;
-  const k=key(it.n),qn=itemQty(it),by=PL.by[k];
-  const step=it.c?"":`<span class="step"><button class="qb" data-qd="-1" data-qi="${ix}" aria-label="Færre ${esc(it.n)}">−</button><b class="qv${qn>1?" many":""}">${qn}</b><button class="qb" data-qd="1" data-qi="${ix}" aria-label="Flere ${esc(it.n)}">+</button></span>`;
-  return `<li class="item${it.c?" on":""}" data-ix="${ix}"><input type="checkbox" id="c${ix}" ${it.c?"checked":""} tabindex="-1" aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}${by&&!it.c?`<small class="by">${esc(by.join(" · "))}</small>`:""}</span>${step}</li>`;
+function subLine(id){
+  const it=I(id),by=PL.by[id],parts=[];
+  if(it.note)parts.push(`<small class="note">${esc(it.note)}</small>`);
+  if(by&&!it.c)parts.push(`<small class="by">${esc(by.join(" · "))}</small>`);
+  return parts.join("");
 }
-function addMatches(){const q=key(addQ);if(!q)return[];return S.items.filter(it=>key(it.n).includes(q))}
+function itemRow(id){
+  const it=I(id);
+  if(editMode){
+    if(it.h)return `<li class="item edit hdr${id===selId?" sel":""}" data-id="${id}"><span class="grip" aria-hidden="true">⋮⋮</span><span class="nm"><b>${esc(it.n)}</b><small class="by">Avdeling</small></span></li>`;
+    return `<li class="item edit${id===selId?" sel":""}" data-id="${id}"><span class="grip" aria-hidden="true">⋮⋮</span><span class="nm">${esc(it.n)}${it.note?`<small class="note">${esc(it.note)}</small>`:""}</span></li>`;
+  }
+  const qn=qtyOf(id);
+  const step=it.c?"":`<span class="step"><button class="qb" data-qd="-1" data-qi="${id}" aria-label="Færre ${esc(it.n)}">−</button><b class="qv${qn>1?" many":""}">${qn}</b><button class="qb" data-qd="1" data-qi="${id}" aria-label="Flere ${esc(it.n)}">+</button></span>`;
+  return `<li class="item${it.c?" on":""}" data-id="${id}"><input type="checkbox" ${it.c?"checked":""} tabindex="-1" aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}${subLine(id)}</span>${step}</li>`;
+}
+function groups(){ // [{h:id|null, items:[id]}]
+  const g=[{h:null,items:[]}];
+  for(const id of ids()){if(I(id).h)g.push({h:id,items:[]});else g[g.length-1].items.push(id)}
+  return g.filter(x=>x.h||x.items.length);
+}
+function addMatches(){const q=key(addQ);if(!q)return[];return itemIds().filter(id=>key(I(id).n).includes(q)||key(I(id).note||"").includes(q))}
 function addResHtml(){
   const q=addQ.trim();if(!q)return"";
-  const m=addMatches();
-  let h="";
-  if(m.length)h+=`<ul class="reslist">${m.map(it=>`<li class="res${it.c?"":" active"}" data-ak="${esc(key(it.n))}"><span>${esc(it.n)}</span><small class="state">${it.c?"Legg på listen":"På listen ✓"}</small></li>`).join("")}</ul>`;
+  const m=addMatches();let h="";
+  if(m.length)h+=`<ul class="reslist">${m.map(id=>`<li class="res${I(id).c?"":" active"}" data-ak="${id}"><span>${esc(I(id).n)}${I(id).note?` <small class="note">${esc(I(id).note)}</small>`:""}</span><small class="state">${I(id).c?"Legg på listen":"På listen ✓"}</small></li>`).join("")}</ul>`;
   else h+=`<p class="sub" style="margin:0">Ingen treff i sortimentet.</p>`;
-  if(!findItem(q))h+=`<div class="pknew"><div>Ny vare: <b>${esc(q)}</b></div><select id="newpos" aria-label="Plassering i listen">${posOptions()}</select><button class="btn small primary" id="additem">Legg til ny vare</button></div>`;
+  if(!findByName(splitQ(q).n))h+=`<div class="pknew"><div>Ny vare: <b>${esc(splitQ(q).n)}</b></div><select id="newpos" aria-label="Plassering i listen">${posOptions(lastPos)}</select><button class="btn small primary" id="additem">Legg til ny vare</button></div>`;
   return h;
 }
 function refreshAdd(){const el=$("#addres");if(el)el.innerHTML=addResHtml()}
-function pickExisting(it){
+function pickExisting(id){const it=I(id);
   if(it.c){it.c=false;toast(it.n+" lagt på listen");addQ="";changed();const i=$("#newitem");if(i)i.focus()}
-  else{it.c=true;toast(it.n+" huket av");changed()}
+  else{it.c=true;toast(it.n+" huket av");changed()}}
+function mvResHtml(){const q=key(mvQ);if(!q||!selId)return"";
+  const m=ids().filter(id=>id!==selId&&key(I(id).n).includes(q));
+  if(!m.length)return `<p class="sub" style="margin:0">Ingen treff på «${esc(mvQ)}»</p>`;
+  return `<ul class="reslist mvlist">${m.slice(0,40).map(id=>`<li class="res mvr" data-mk="${id}"><span>Etter <b>${esc(I(id).n)}</b>${I(id).h?" <small class=\"by\">(avdeling)</small>":""}</span></li>`).join("")}</ul>`}
+function panelHtml(){
+  const it=I(selId);if(!it)return"";
+  const isH=!!it.h;
+  let secOpts='<option value="">Flytt til avdeling…</option>';for(const id of ids())if(I(id).h)secOpts+=`<option value="${id}">${esc(I(id).n)}</option>`;
+  return `<div class="panel"><div class="ptitle">${isH?"Avdeling: ":""}${esc(it.n)}</div>
+    <div class="row"><button class="btn small" id="mv-up">↑ Opp</button><button class="btn small" id="mv-down">↓ Ned</button><button class="btn small" id="mv-top">Øverst</button><button class="btn small" id="mv-bot">Nederst</button></div>
+    <div id="mv-res">${mvResHtml()}</div>
+    <div class="row"><input type="search" id="mv-q" placeholder="Flytt etter: søk vare eller avdeling" value="${esc(mvQ)}" autocomplete="off"></div>
+    ${isH?"":`<div class="row"><select id="mv-sec" aria-label="Flytt til avdeling">${secOpts}</select></div>`}
+    <div class="row"><input type="text" id="mv-name" value="${esc(it.n)}" placeholder="Navn" aria-label="Navn"></div>
+    ${isH?"":`<div class="row"><input type="text" id="mv-note" value="${esc(it.note||"")}" placeholder="Notat, f.eks. lilla eller om tilbud" aria-label="Notat"></div>`}
+    <div class="row"><button class="btn small primary" id="mv-save">Lagre</button><button class="btn small" id="mv-del">${delArm?"Trykk igjen for å slette":isH?"Slett avdeling":"Slett vare"}</button><button class="btn small" id="mv-done" style="margin-left:auto">Lukk</button></div></div>`;
 }
-function mvResHtml(){const q=key(mvQ);if(!q||!selItem)return"";
-  const m=S.items.filter(it=>it!==selItem&&key(it.n).includes(q));
-  if(!m.length)return `<p class="sub" style="margin:0">Ingen varer matcher «${esc(mvQ)}»</p>`;
-  return `<ul class="reslist mvlist">${m.slice(0,40).map(it=>`<li class="res mvr" data-mk="${esc(key(it.n))}"><span>Etter <b>${esc(it.n)}</b></span></li>`).join("")}</ul>`}
 function renderListe(){
+  if(shop&&!editMode)return renderShop();
   let h=`<div class="toolbar">`;
-  if(!editMode)h+=`<label class="tog"><input type="checkbox" id="hide" ${hideDone?"checked":""}> Skjul avhuket</label>`;
-  h+=`<button class="btn small${editMode?" primary":""}" id="editmode" style="margin-left:auto">${editMode?"Ferdig":"Endre rekkefølge"}</button></div>`;
-  if(editMode)h+=`<p class="sub" style="margin-top:8px">Trykk på en vare for å flytte eller slette den.</p>`;
-  if(!editMode)h+=`<h2>Legg til vare</h2><div class="addbox"><input type="search" id="newitem" placeholder="Søk i sortimentet eller skriv ny vare" value="${esc(addQ)}" autocomplete="off"><div id="addres">${addResHtml()}</div></div>`;
-  const rows=S.items.map((it,ix)=>ix).filter(ix=>editMode||!(hideDone&&S.items[ix].c));
-  h+=`<div class="group rest" style="margin-top:12px"><ul>${rows.map(itemLi).join("")||`<li class="empty">Alt er avhuket</li>`}</ul></div>`;
-  if(editMode&&selItem){
-    h+=`<div class="panel"><div class="ptitle">${esc(selItem.n)}</div>
-      <div class="row"><button class="btn small" id="mv-up">↑ Opp</button><button class="btn small" id="mv-down">↓ Ned</button><button class="btn small" id="mv-top">Øverst</button><button class="btn small" id="mv-bot">Nederst</button></div>
-      <div id="mv-res">${mvResHtml()}</div>
-      <div class="row"><input type="search" id="mv-q" placeholder="Flytt etter vare: søk" value="${esc(mvQ)}" autocomplete="off"></div>
-      <div class="row"><input type="text" id="mv-name" value="${esc(selItem.n)}" aria-label="Nytt navn"><button class="btn small" id="mv-rename">Endre navn</button></div>
-      <div class="row"><button class="btn small" id="mv-del">${delArm?"Trykk igjen for å slette":"Slett vare"}</button><button class="btn small primary" id="mv-done" style="margin-left:auto">Ferdig</button></div></div>`;
+  if(!editMode)h+=`<button class="btn small primary" id="shopmode">Handlemodus</button><label class="tog"><input type="checkbox" id="hide" ${hideDone?"checked":""}> Skjul avhuket</label>`;
+  else h+=`<button class="btn small" id="newsec">+ Ny avdeling</button>`;
+  h+=`<button class="btn small${editMode?" primary":""}" id="editmode" style="margin-left:auto">${editMode?"Ferdig":"Endre liste"}</button></div>`;
+  if(editMode)h+=`<p class="sub" style="margin-top:8px">Trykk på en vare eller avdeling for å flytte, endre navn, legge til notat eller slette.</p>`;
+  else h+=`<h2>Legg til vare</h2><div class="addbox"><input type="search" id="newitem" placeholder="Søk i sortimentet eller skriv ny vare" value="${esc(addQ)}" autocomplete="off"><div id="addres">${addResHtml()}</div></div>`;
+  h+=`<div class="group rest" style="margin-top:12px"><ul>`;
+  let any=false;
+  for(const g of groups()){
+    if(g.h){
+      if(editMode){h+=itemRow(g.h)}
+      else{const left=g.items.filter(id=>!I(id).c).length,closed=col.includes(g.h);
+        h+=`<li class="sec"><button class="secbtn" data-col="${g.h}" aria-expanded="${!closed}"><span class="chev">${closed?"▸":"▾"}</span>${esc(I(g.h).n)}</button><small class="${left?"left":""}">${left?left+" igjen":"alt huket av"}</small></li>`;
+        if(closed)continue;}
+    }
+    for(const id of g.items){if(!editMode&&hideDone&&I(id).c)continue;h+=itemRow(id);any=true}
   }
+  if(!any&&!editMode)h+=`<li class="empty">Alt er avhuket</li>`;
+  h+=`</ul></div>`;
+  if(editMode&&selId)h+=panelHtml();
+  return h;
+}
+function renderShop(){
+  const left=itemIds().filter(id=>!I(id).c);
+  let h=`<div class="shopbar"><div><b class="big">${left.length}</b> varer igjen</div><button class="btn primary" id="shopdone">Ferdig handlet</button></div>`;
+  for(const g of groups()){
+    const rows=g.items.filter(id=>!I(id).c);if(!rows.length)continue;
+    if(g.h)h+=`<div class="shsec">${esc(I(g.h).n)}</div>`;
+    h+=`<ul class="shop">${rows.map(id=>{const q=qtyOf(id);return `<li class="sh" data-sh="${id}"><span class="box" aria-hidden="true"></span><span class="nm">${esc(I(id).n)}${subLine(id)}</span>${q>1?`<b class="shq">×${q}</b>`:""}</li>`}).join("")}</ul>`;
+  }
+  if(!left.length)h+=`<p class="empty" style="text-align:center">Alt er i kurven.</p>`;
+  const inb=trip.filter(id=>S.items[id]&&I(id).c);
+  if(inb.length)h+=`<details class="basket"${ls("bopen",false)?" open":""}><summary>I kurven (${inb.length})</summary><ul class="shop">${inb.map(id=>`<li class="sh done" data-unsh="${id}"><span class="box on" aria-hidden="true">✓</span><span class="nm">${esc(I(id).n)}</span>${qtyOf(id)>1?`<b class="shq">×${qtyOf(id)}</b>`:""}</li>`).join("")}</ul></details>`;
   return h;
 }
 
 /* ---- ukeplan ---- */
 function renderUke(){
-  const opts=id=>`<option value="">Ingen middag</option>`+S.dinners.map(d=>`<option value="${esc(d.id)}" ${d.id===id?"selected":""}>${esc(d.name)}</option>`).join("");
   let h=`<h2>Hva skal dere spise?</h2><div class="group">`;
-  for(const d of DAYS){const din=S.dinners.find(x=>x.id===S.week[d]);h+=`<div class="day"><b>${d}</b><button class="btn daybtn${din?"":" none"}" data-dayp="${d}">${din?esc(din.name):"Velg middag"}</button></div>`}
+  for(const d of DAYS){const din=S.dinners[S.week[d]];h+=`<div class="day"><b>${d}</b><button class="btn daybtn${din?"":" none"}" data-dayp="${d}">${din?esc(din.name):"Velg middag"}</button></div>`}
   h+=`</div><p class="sub" style="margin-top:10px">Når du velger en middag, blir ingrediensene uavhuket i handlelisten. Rekkefølgen i listen endres ikke.</p>`;
   h+=`<div class="toolbar"><button class="btn primary" id="newweek">Ny uke: huk av alt annet</button></div>`;
   if(confirmReset)h+=`<div class="confirm">Alt som ikke hører til ukens middager blir avhuket. <button class="btn small primary" id="yesreset">Ja, gjør det</button><button class="btn small" id="noreset">Avbryt</button></div>`;
   return h;
 }
-
 /* ---- middager ---- */
 function renderMiddager(){
   let h=`<div class="toolbar"><input type="text" id="newdin" placeholder="Ny middag, f.eks. Lasagne"><button class="btn primary" id="adddin">Lag middag</button></div><h2>Dine middager</h2><div class="groups">`;
-  for(const d of S.dinners){
-    h+=`<div class="group dish"><div class="ghead"><b>${esc(d.name)}</b><button class="btn small" data-deldin="${esc(d.id)}">Slett</button></div>
-    <div class="chips">${d.ing.map((i,k)=>`<span class="chip">${esc(i)}${dq(d,key(i))>1?` <b class="cq">×${dq(d,key(i))}</b>`:""}<button data-din="${esc(d.id)}" data-delk="${k}" aria-label="Fjern ${esc(i)}">×</button></span>`).join("")||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
-    <div class="addline"><button class="btn small primary" data-pick="${esc(d.id)}">Velg ingredienser fra listen</button></div></div>`;
+  for(const did of dinnerIds()){const d=S.dinners[did];
+    const chips=(d.ing||[]).filter(id=>S.items[id]).map(id=>`<span class="chip">${esc(I(id).n)}${dq(d,id)>1?` <b class="cq">×${dq(d,id)}</b>`:""}<button data-din="${did}" data-dii="${id}" aria-label="Fjern ${esc(I(id).n)}">×</button></span>`).join("");
+    h+=`<div class="group dish"><div class="ghead"><b>${esc(d.name)}</b><button class="btn small" data-deldin="${did}">${delArm===did?"Trykk igjen":"Slett"}</button></div>
+    <div class="chips">${chips||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
+    <div class="addline"><button class="btn small primary" data-pick="${did}">Velg ingredienser fra listen</button></div></div>`;
   }
-  h+=`</div>`;
-  return h;
+  return h+`</div>`;
 }
 
-/* ---- ingrediensvelger ---- */
+/* ---- velgere ---- */
 function pickListHtml(){
-  const d=S.dinners.find(x=>x.id===pickerDin);if(!d)return"";
-  const q=key(pickerQ),inDin=new Set(d.ing.map(key));
-  const rows=S.items.filter(it=>!q||key(it.n).includes(q));
-  let h=rows.map(it=>`<li class="item${inDin.has(key(it.n))?" picked":""}" data-pk="${esc(key(it.n))}"><input type="checkbox" tabindex="-1" ${inDin.has(key(it.n))?"checked":""} aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}</span>${inDin.has(key(it.n))?`<span class="step"><button class="qb" data-dq="-1" data-dk="${esc(key(it.n))}" aria-label="Færre">−</button><b class="qv${dq(d,key(it.n))>1?" many":""}">${dq(d,key(it.n))}</b><button class="qb" data-dq="1" data-dk="${esc(key(it.n))}" aria-label="Flere">+</button></span>`:""}</li>`).join("");
-  if(!rows.length)h=`<li class="empty">Ingen varer i listen matcher «${esc(pickerQ)}»</li>`;
+  const d=S.dinners[pickerDin];if(!d)return"";
+  const q=key(pickerQ),inDin=new Set(d.ing||[]);let h="";
+  for(const id of ids()){const it=I(id);
+    if(it.h){if(!q)h+=`<li class="pkh">${esc(it.n)}</li>`;continue}
+    if(q&&!key(it.n).includes(q))continue;
+    const on=inDin.has(id);
+    h+=`<li class="item${on?" picked":""}" data-pk="${id}"><input type="checkbox" tabindex="-1" ${on?"checked":""} aria-label="${esc(it.n)}"><span class="nm">${esc(it.n)}</span>${on?`<span class="step"><button class="qb" data-dq="-1" data-dk="${id}" aria-label="Færre">−</button><b class="qv${dq(d,id)>1?" many":""}">${dq(d,id)}</b><button class="qb" data-dq="1" data-dk="${id}" aria-label="Flere">+</button></span>`:""}</li>`;
+  }
+  if(q&&!h)h=`<li class="empty">Ingen varer i listen matcher «${esc(pickerQ)}»</li>`;
   return h;
 }
-function pickNewHtml(){
-  const q=pickerQ.trim();
-  if(!q||findItem(q))return"";
-  return `<div class="pknew"><div>Ny vare: <b>${esc(q)}</b></div><div class="row"><select id="pk-pos" aria-label="Plassering i listen">${posOptions()}</select><button class="btn small primary" id="pk-add">Legg til i listen og middagen</button></div></div>`;
-}
+function pickNewHtml(){const s=splitQ(pickerQ.trim());if(!s.n||findByName(s.n))return"";
+  return `<div class="pknew"><div>Ny vare: <b>${esc(s.n)}</b></div><div class="row"><select id="pk-pos" aria-label="Plassering i listen">${posOptions(lastPos)}</select><button class="btn small primary" id="pk-add">Legg til i listen og middagen</button></div></div>`}
 function dayListHtml(){
   const q=key(dayQ),cur=S.week[dayPick]||"";
-  const rows=S.dinners.filter(d=>!q||key(d.name).includes(q));
+  const rows=dinnerIds().filter(id=>!q||key(S.dinners[id].name).includes(q));
   let h=q?"":`<li class="item${cur===""?" picked":""}" data-did=""><span>Ingen middag</span></li>`;
-  h+=rows.map(d=>`<li class="item${d.id===cur?" picked":""}" data-did="${esc(d.id)}"><span>${esc(d.name)}</span><small class="cnt">${d.ing.length} ingredienser</small></li>`).join("");
+  h+=rows.map(id=>`<li class="item${id===cur?" picked":""}" data-did="${id}"><span>${esc(S.dinners[id].name)}</span><small class="cnt">${(S.dinners[id].ing||[]).length} ingredienser</small></li>`).join("");
   if(q&&!rows.length)h+=`<li class="empty">Ingen middag heter «${esc(dayQ)}»</li>`;
   return h;
 }
-function dayNewHtml(){const q=dayQ.trim();if(!q||S.dinners.some(d=>key(d.name)===key(q)))return"";
+function dayNewHtml(){const q=dayQ.trim();if(!q||dinnerIds().some(id=>key(S.dinners[id].name)===key(q)))return"";
   return `<div class="pknew"><div>Ny middag: <b>${esc(q)}</b></div><button class="btn small primary" id="dp-add">Lag middagen og velg ingredienser</button></div>`}
-function setDay(id){S.week[dayPick]=id;applyWeek(S);changed(true);const din=S.dinners.find(x=>x.id===id);if(din)toast(din.name+": ingredienser uavhuket")}
+function newDinner(name){const id=uid("d");S.dinners[id]={name,ing:[],qty:{},o:Date.now()};return id}
+function setDay(id){S.week[dayPick]=id;applyWeek();changed(true);const din=S.dinners[id];if(din)toast(din.name+": ingredienser uavhuket")}
 function renderPicker(){
   const el=$("#picker");
   if(dayPick){el.hidden=false;document.body.style.overflow="hidden";
     el.innerHTML=`<div class="phead"><input type="search" id="dp-q" placeholder="Middag til ${esc(dayPick.toLowerCase())}: søk" value="${esc(dayQ)}" autocomplete="off"><button class="btn small" id="dp-done">Lukk</button></div>
-      <div class="pkbody"><ul id="dp-list" class="pklist">${dayListHtml()}</ul><div id="dp-new">${dayNewHtml()}</div></div>`;
-    return}
-  const d=S.dinners.find(x=>x.id===pickerDin);
+      <div class="pkbody"><ul id="dp-list" class="pklist">${dayListHtml()}</ul><div id="dp-new">${dayNewHtml()}</div></div>`;return}
+  const d=S.dinners[pickerDin];
   if(!d){el.hidden=true;document.body.style.overflow="";return}
   el.hidden=false;document.body.style.overflow="hidden";
   el.innerHTML=`<div class="phead"><input type="search" id="pk-q" placeholder="Ingredienser til ${esc(d.name)}: søk" value="${esc(pickerQ)}" autocomplete="off"><button class="btn small primary" id="pk-done">Ferdig</button></div>
     <div class="pkbody"><ul id="pk-list" class="pklist">${pickListHtml()}</ul><div id="pk-new">${pickNewHtml()}</div></div>`;
 }
-function refreshPick(){$("#pk-list").innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml()}
-function closePicker(){pickerDin=null;pickerQ="";renderPicker();render()}
+function refreshPick(){if(dayPick){$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml()}else if(pickerDin&&$("#pk-list")){const l=$("#pk-list"),st=l.parentNode.scrollTop;l.innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml();l.parentNode.scrollTop=st}}
+function closePicker(){pickerDin=null;pickerQ="";dayPick=null;dayQ="";renderPicker();render()}
 
 function render(){
-  PL=plannedMap(S);
+  PL=planned();
+  if(selId&&!S.items[selId])selId=null;
+  const ae=document.activeElement,aid=ae&&$("#view").contains(ae)&&ae.id,ss=aid&&ae.selectionStart;
   document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
-  if(selItem&&!S.items.includes(selItem))selItem=null;
-  document.body.classList.toggle("editing",!!(editMode&&selItem));
+  document.body.classList.toggle("editing",!!(editMode&&selId));
+  document.body.classList.toggle("shopping",tab==="liste"&&shop&&!editMode);
   $("#view").innerHTML=tab==="uke"?renderUke():tab==="middager"?renderMiddager():renderListe();
-  $("#sub").textContent=S.items.filter(it=>!it.c).length+" varer igjen å handle";
+  $("#sub").textContent=itemIds().filter(id=>!I(id).c).length+" varer igjen å handle";
+  if(aid){const n=document.getElementById(aid);if(n){n.focus();try{if(ss!=null)n.setSelectionRange(ss,ss)}catch(e){}}}
 }
+function scrollSel(){const el=document.querySelector(`li.item[data-id="${selId}"]`);if(el)el.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
+function moved(){mvQ="";changed();scrollSel();toast("Flyttet")}
 
-document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;confirmReset=false;editMode=false;selItem=null;try{localStorage.setItem("tab",tab)}catch(_){};render()});
+/* ---- hendelser ---- */
+document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;confirmReset=false;editMode=false;selId=null;delArm=false;lsSet("tab",tab);render()});
 $("#view").addEventListener("click",e=>{
   const t=e.target;
-  const qb=t.closest("button.qb");
-  if(qb&&qb.dataset.qi!==undefined){bumpQty(S.items[+qb.dataset.qi],+qb.dataset.qd);return}
-  const mv=t.closest("li.mvr");
-  if(mv){placeAt(selItem,"k:"+mv.dataset.mk);mvQ="";changed();scrollSel();toast("Flyttet");return}
-  if(t.id==="mv-top"||t.id==="mv-bot"){placeAt(selItem,t.id==="mv-top"?"top":"end");mvQ="";changed();scrollSel();toast("Flyttet");return}
-  const rs=t.closest("li.res");
-  if(rs){const it=findItem(rs.dataset.ak);if(it)pickExisting(it);return}
+  const qb=t.closest("button.qb");if(qb&&qb.dataset.qi){bump(qb.dataset.qi,+qb.dataset.qd);return}
+  const sb=t.closest("button.secbtn");if(sb){const id=sb.dataset.col;col=col.includes(id)?col.filter(x=>x!==id):[...col,id];lsSet("col",col);render();return}
+  const sh=t.closest("li[data-sh]");if(sh){const id=sh.dataset.sh;I(id).c=true;if(!trip.includes(id))trip.push(id);lsSet("trip",trip);changed();return}
+  const us=t.closest("li[data-unsh]");if(us){const id=us.dataset.unsh;I(id).c=false;trip=trip.filter(x=>x!==id);lsSet("trip",trip);changed();return}
+  const mv=t.closest("li.mvr");if(mv){placeAt(selId,{after:mv.dataset.mk});moved();return}
+  const rs=t.closest("li.res");if(rs){if(S.items[rs.dataset.ak])pickExisting(rs.dataset.ak);return}
   const li=t.closest("li.item");
-  if(li){const it=S.items[+li.dataset.ix];
-    if(editMode){selItem=selItem===it?null:it;delArm=false;mvQ="";render();return}
-    it.c=!it.c;changed();return}
-  if(t.id==="editmode"){editMode=!editMode;selItem=null;delArm=false;render();return}
-  if(t.id==="mv-up"||t.id==="mv-down"){const i=S.items.indexOf(selItem),j=t.id==="mv-up"?i-1:i+1;if(j<0||j>=S.items.length)return;S.items.splice(i,1);S.items.splice(j,0,selItem);changed();scrollSel();return}
-  if(t.id==="mv-rename"){renameSel();return}
-  if(t.dataset.dayp){dayPick=t.dataset.dayp;dayQ="";renderPicker();return}
-  if(t.id==="mv-done"){selItem=null;delArm=false;render();return}
-  if(t.id==="mv-del"){if(!delArm){delArm=true;render();return}
-    const k=key(selItem.n);S.items.splice(S.items.indexOf(selItem),1);S.dinners.forEach(d=>{d.ing=d.ing.filter(i=>key(i)!==k);if(d.qty)delete d.qty[k]});toast(selItem.n+" slettet");selItem=null;delArm=false;changed();return}
+  if(li&&li.dataset.id){const id=li.dataset.id;
+    if(editMode){selId=selId===id?null:id;delArm=false;mvQ="";render();return}
+    I(id).c=!I(id).c;changed();return}
+  if(t.id==="shopmode"){shop=true;lsSet("shop",true);render();window.scrollTo(0,0);return}
+  if(t.id==="shopdone"){shop=false;trip=[];lsSet("shop",false);lsSet("trip",[]);render();toast("Handlet ferdig");return}
+  if(t.id==="editmode"){editMode=!editMode;selId=null;delArm=false;mvQ="";render();return}
+  if(t.id==="newsec"){const id=uid("h");S.items[id]={n:"Ny avdeling",h:true,o:0};placeAt(id,"end");selId=id;changed();setTimeout(()=>{scrollSel();const n=$("#mv-name");if(n){n.focus();n.select()}},50);return}
+  if(selId&&S.items[selId]){
+    const arr=ids(),i=arr.indexOf(selId);
+    if(t.id==="mv-up"){if(i>0){placeAt(selId,i>1?{after:arr[i-2]}:"top");changed();scrollSel()}return}
+    if(t.id==="mv-down"){if(i<arr.length-1){placeAt(selId,{after:arr[i+1]});changed();scrollSel()}return}
+    if(t.id==="mv-top"||t.id==="mv-bot"){placeAt(selId,t.id==="mv-top"?"top":"end");moved();return}
+    if(t.id==="mv-save"){saveSel();return}
+    if(t.id==="mv-done"){selId=null;delArm=false;mvQ="";render();return}
+    if(t.id==="mv-del"){if(!delArm){delArm=true;render();return}
+      const it=I(selId);delete S.items[selId];
+      if(!it.h)for(const did in S.dinners){const d=S.dinners[did];if((d.ing||[]).includes(selId)){d.ing=d.ing.filter(x=>x!==selId);if(d.qty&&d.qty[selId]!=null){const q=clone(d.qty);delete q[selId];d.qty=q}}}
+      toast(it.n+" slettet");selId=null;delArm=false;changed();return}
+  }
   if(t.id==="additem"){addItem();return}
+  if(t.dataset.dayp){dayPick=t.dataset.dayp;dayQ="";renderPicker();setTimeout(()=>{const q=$("#dp-q");if(q)q.focus()},50);return}
   if(t.id==="newweek"){confirmReset=true;render();return}
   if(t.id==="noreset"){confirmReset=false;render();return}
-  if(t.id==="yesreset"){const need=new Set();for(const d of DAYS){const din=S.dinners.find(x=>x.id===S.week[d]);if(din)din.ing.forEach(i=>need.add(key(i)))}
-    S.items.forEach(it=>{it.c=!need.has(key(it.n));it.x=0});confirmReset=false;changed();toast("Klar for ny uke");return}
-  if(t.dataset.delk!==undefined){const d=S.dinners.find(x=>x.id===t.dataset.din);const [rm]=d.ing.splice(+t.dataset.delk,1);if(d.qty)delete d.qty[key(rm)];changed();return}
+  if(t.id==="yesreset"){const p=planned().p;for(const id of itemIds()){I(id).c=!p[id];if(I(id).x)I(id).x=0}confirmReset=false;changed();toast("Klar for ny uke");return}
+  if(t.dataset.dii){const d=S.dinners[t.dataset.din];d.ing=d.ing.filter(x=>x!==t.dataset.dii);if(d.qty&&d.qty[t.dataset.dii]!=null){const q=clone(d.qty);delete q[t.dataset.dii];d.qty=q}changed();return}
   if(t.dataset.pick){pickerDin=t.dataset.pick;pickerQ="";renderPicker();return}
-  if(t.dataset.deldin){const id=t.dataset.deldin;S.dinners=S.dinners.filter(x=>x.id!==id);for(const d of DAYS)if(S.week[d]===id)S.week[d]="";changed();return}
-  if(t.id==="adddin"){const v=$("#newdin").value.trim();if(!v)return;let id=key(v).replace(/[^a-z0-9æøå]+/g,"-")||"m";while(S.dinners.some(x=>x.id===id))id+="-2";S.dinners.push({id,name:v,ing:[]});changed();pickerDin=id;pickerQ="";renderPicker()}
+  if(t.dataset.deldin){const id=t.dataset.deldin;if(delArm!==id){delArm=id;render();return}
+    const nm=S.dinners[id].name;delete S.dinners[id];for(const d of DAYS)if(S.week[d]===id)S.week[d]="";delArm=false;changed();toast(nm+" slettet");return}
+  if(t.id==="adddin"){const v=$("#newdin").value.trim();if(!v)return;const id=newDinner(v);changed();pickerDin=id;pickerQ="";renderPicker()}
 });
 $("#view").addEventListener("change",e=>{
   const t=e.target;
-  if(t.id==="hide"){hideDone=t.checked;try{localStorage.setItem("hide",hideDone?"1":"0")}catch(_){};render();return}
-  if(t.id==="mv-after"&&t.value){placeAt(selItem,t.value);changed();scrollSel();toast("Flyttet");return}
-  const day=t.dataset.day;if(day){S.week[day]=t.value;const din=S.dinners.find(x=>x.id===t.value);applyWeek(S);changed();if(din)toast(din.name+": ingredienser uavhuket")}
+  if(t.id==="hide"){hideDone=t.checked;lsSet("hide2",hideDone);render();return}
+  if(t.id==="mv-sec"&&t.value){placeAt(selId,{sec:t.value});moved();return}
+  if(t.id==="newpos"){lastPos=t.value;lsSet("pos",lastPos)}
 });
-function renameSel(){
-  const v=$("#mv-name").value.trim();if(!v||!selItem||v===selItem.n)return;
-  const other=findItem(v);if(other&&other!==selItem){toast(v+" finnes allerede i listen");return}
-  const old=key(selItem.n);
-  S.dinners.forEach(d=>{d.ing=d.ing.map(i=>key(i)===old?v:i);if(d.qty&&d.qty[old]!=null){d.qty[key(v)]=d.qty[old];delete d.qty[old]}});
-  selItem.n=v;changed();toast("Navn endret");
+$("#view").addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("basket"))lsSet("bopen",e.target.open)},true);
+function saveSel(){
+  const it=I(selId);if(!it)return;
+  const v=$("#mv-name").value.trim();
+  if(v&&v!==it.n){if(!it.h){const o=findByName(v);if(o&&o!==selId){toast(v+" finnes allerede i listen");return}}it.n=v}
+  const ne=$("#mv-note");if(ne){const nv=ne.value.trim();if(nv)it.note=nv;else delete it.note}
+  changed();toast("Lagret");
 }
-$("#view").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.target;if(t.id==="mv-name"){renameSel();return}if(t.id==="newitem")addItem();else if(t.id==="newdin")$("#adddin").click()});
-function scrollSel(){const i=S.items.indexOf(selItem);const el=document.querySelector(`li.item[data-ix="${i}"]`);if(el)el.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
-$("#view").addEventListener("input",e=>{if(e.target.id==="newitem"){addQ=e.target.value;refreshAdd()}if(e.target.id==="mv-q"){mvQ=e.target.value;$("#mv-res").innerHTML=mvResHtml()}});
+$("#view").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.target;
+  if(t.id==="mv-name"||t.id==="mv-note"){saveSel();return}
+  if(t.id==="newitem")addItem();else if(t.id==="newdin")$("#adddin").click()});
+$("#view").addEventListener("input",e=>{
+  if(e.target.id==="newitem"){addQ=e.target.value;refreshAdd()}
+  if(e.target.id==="mv-q"){mvQ=e.target.value;$("#mv-res").innerHTML=mvResHtml()}});
 function addItem(){const v=addQ.trim();if(!v)return;
-  const m=addMatches();
-  if(!$("#newpos")){const ex=findItem(v)||(m.length===1?m[0]:null);if(ex){if(ex.c)pickExisting(ex);else toast(ex.n+" står allerede på listen");}return}
-  const pos=$("#newpos").value;addQ="";
-  const sq=splitQ(v);let it=findItem(sq.n);if(it){it.c=false;toast(it.n+" finnes allerede, uavhuket")}else{it={n:sq.n,c:false,q:sq.q};placeAt(it,pos);toast(sq.n+" lagt til")}
-  changed();setTimeout(()=>$("#newitem")&&$("#newitem").focus(),0)}
+  const sq=splitQ(v),m=addMatches();
+  if(!$("#newpos")){const ex=findByName(sq.n)||(m.length===1?m[0]:null);if(ex){if(I(ex).c)pickExisting(ex);else toast(I(ex).n+" står allerede på listen")}return}
+  const pos=$("#newpos").value;lastPos=pos;lsSet("pos",pos);addQ="";
+  const id=uid("i");S.items[id]={n:sq.n,c:false,q:sq.q,x:0,o:0};placeAt(id,parsePos(pos));toast(sq.n+" lagt til");
+  changed();setTimeout(()=>{const i=$("#newitem");if(i)i.focus()},0)}
 
-/* velger-hendelser */
 $("#picker").addEventListener("click",e=>{
-  if(dayPick){const t=e.target;
-    if(t.id==="dp-done"){dayPick=null;renderPicker();render();return}
-    if(t.id==="dp-add"){const v=dayQ.trim();let id=key(v).replace(/[^a-z0-9æøå]+/g,"-")||"m";while(S.dinners.some(x=>x.id===id))id+="-2";
-      S.dinners.push({id,name:v,ing:[]});setDay(id);dayPick=null;pickerDin=id;pickerQ="";renderPicker();return}
-    const li=t.closest("li.item");if(!li)return;setDay(li.dataset.did);dayPick=null;renderPicker();render();return}
-  const t=e.target,d=S.dinners.find(x=>x.id===pickerDin);if(!d)return;
+  const t=e.target;
+  if(dayPick){
+    if(t.id==="dp-done"){closePicker();return}
+    if(t.id==="dp-add"){const id=newDinner(dayQ.trim());setDay(id);dayPick=null;dayQ="";pickerDin=id;pickerQ="";renderPicker();return}
+    const li=t.closest("li.item");if(!li)return;setDay(li.dataset.did);closePicker();return}
+  const d=S.dinners[pickerDin];if(!d)return;
   if(t.id==="pk-done"){closePicker();return}
-  if(t.id==="pk-add"){const sq=splitQ(pickerQ.trim());if(!sq.n)return;const q=sq.n;const it={n:q,c:true,q:1};placeAt(it,$("#pk-pos").value);d.ing.push(q);if(sq.q>1){d.qty=d.qty||{};d.qty[key(q)]=sq.q}afterIngChange(d);pickerQ="";$("#pk-q").value="";refreshPick();toast(q+" lagt til");return}
+  if(t.id==="pk-add"){const sq=splitQ(pickerQ.trim());if(!sq.n)return;const pos=$("#pk-pos").value;lastPos=pos;lsSet("pos",pos);
+    const id=uid("i");S.items[id]={n:sq.n,c:true,q:1,x:0,o:0};placeAt(id,parsePos(pos));d.ing=[...(d.ing||[]),id];if(sq.q>1)d.qty=Object.assign({},d.qty,{[id]:sq.q});
+    afterIng(d);pickerQ="";$("#pk-q").value="";refreshPick();toast(sq.n+" lagt til");return}
   const qb=t.closest("button.qb");
-  if(qb){const k=qb.dataset.dk;d.qty=d.qty||{};const n=Math.max(1,dq(d,k)+ +qb.dataset.dq);if(n===1)delete d.qty[k];else d.qty[k]=n;afterIngChange(d);refreshPick();return}
-  const li=t.closest("li.item");if(!li)return;
-  const it=findItem(li.dataset.pk);if(!it)return;
-  const has=d.ing.some(i=>key(i)===key(it.n));
-  if(has){d.ing=d.ing.filter(i=>key(i)!==key(it.n));if(d.qty)delete d.qty[key(it.n)]}else d.ing.push(it.n);
-  afterIngChange(d);
-  refreshPick();
+  if(qb){const id=qb.dataset.dk,n=Math.max(1,dq(d,id)+ +qb.dataset.dq),q=Object.assign({},d.qty);if(n===1)delete q[id];else q[id]=n;d.qty=q;afterIng(d);refreshPick();return}
+  const li=t.closest("li.item");if(!li||!li.dataset.pk)return;
+  const id=li.dataset.pk,has=(d.ing||[]).includes(id);
+  if(has){d.ing=d.ing.filter(x=>x!==id);if(d.qty&&d.qty[id]!=null){const q=clone(d.qty);delete q[id];d.qty=q}}else d.ing=[...(d.ing||[]),id];
+  afterIng(d);refreshPick();
 });
-$("#picker").addEventListener("input",e=>{if(e.target.id==="dp-q"){dayQ=e.target.value;$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml();return}if(e.target.id==="pk-q"){pickerQ=e.target.value;refreshPick()}});
+$("#picker").addEventListener("input",e=>{if(e.target.id==="dp-q"){dayQ=e.target.value;refreshPick();return}if(e.target.id==="pk-q"){pickerQ=e.target.value;refreshPick()}});
 $("#picker").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pk-q"&&$("#pk-add"))$("#pk-add").click()});
-function afterIngChange(d){if(DAYS.some(day=>S.week[day]===d.id))applyWeek(S);changed(true)}
-
+function afterIng(d){if(DAYS.some(day=>S.dinners[S.week[day]]===d))applyWeek();changed(true)}
 
 /* ---- Firebase: innlogging og synk ---- */
 const gate=$("#gate");
 function showGate(msg,btn){gate.hidden=false;$("#gate-msg").textContent=msg;$("#login").hidden=!btn}
 let unsub=null;
+function adopt(d){
+  S=d;S.items=S.items||{};S.dinners=S.dinners||{};S.week=S.week||{};B=clone(S);
+  trip=trip.filter(id=>S.items[id]);
+  render();if(dayPick||pickerDin)refreshPick();
+}
 function startSync(user){
   ref=fdb.collection("lists").doc("main");
   status("Kobler til…");
-  unsub=ref.onSnapshot(snap=>{
+  unsub=ref.onSnapshot({includeMetadataChanges:true},snap=>{
     gate.hidden=true;
-    if(!snap.exists){ref.set(JSON.parse(JSON.stringify(S))).then(()=>status("Listen er opprettet"));return}
-    if(snap.metadata.hasPendingWrites||dirty||saving)return;
-    const d=snap.data();if(d&&Array.isArray(d.items)){
-      const selK=selItem&&key(selItem.n);
-      S=JSON.parse(JSON.stringify(d));if(migrate(S)){changed(true)}try{localStorage.setItem("state",JSON.stringify(S))}catch(e){}
-      if(selK)selItem=findItem(selK)||null;
-      if(pickerDin||dayPick){pickerDin?refreshPick():null}else render();
-    }
+    if(!snap.exists){if(!snap.metadata.fromCache){B=clone(S);ref.set(clone(S)).then(()=>status("Listen er opprettet"))}return}
+    const d=snap.data();
+    if(!d.v||d.v<3){if(snap.metadata.fromCache)return;const n=toV3(d);fdb.collection("lists").doc("backup-v2").set(clone(d)).catch(()=>{});adopt(n);ref.set(clone(n)).then(()=>toast("Listen er oppgradert"));return}
+    if(saveTimer)return;
+    adopt(d);
     status(snap.metadata.fromCache?"Frakoblet, endringer lagres når du er på nett igjen":"Synkronisert · "+(user.email||""));
   },err=>{
     if(err&&err.code==="permission-denied")showGate("Kontoen "+(user.email||"")+" har ikke tilgang til denne listen. Be eieren legge deg til.",true);
