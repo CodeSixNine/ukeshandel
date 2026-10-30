@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Ukeshandel</title>
 <meta name="theme-color" content="#2f7a4c">
 <link rel="manifest" href="manifest.json">
@@ -72,6 +72,8 @@ body.editing .wrap{padding-bottom:220px}
 .panel{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:10px;padding-top:12px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .panel .ptitle{font-family:var(--f-display);font-weight:600;font-size:1.05rem;overflow-wrap:anywhere}
 .panel select{flex:1 1 160px}
+.panel input[type=search]{flex:1 1 160px;min-width:0;font-size:16px}
+.mvlist{max-height:32vh}
 .addbox{display:flex;flex-direction:column;gap:8px}
 .addbox select{flex:none;width:100%}
 .addbox input[type=search]{flex:none}
@@ -82,16 +84,18 @@ li.res span{min-width:0;overflow-wrap:anywhere}
 li.res .state{margin-left:auto;flex:none;color:var(--accent);font-weight:700;font-size:.85rem}
 li.res.active{background:var(--accent-soft)}
 li.res.active .state{color:var(--muted);font-weight:400}
-.picker{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.picker{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;gap:8px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .picker[hidden]{display:none!important}
 .daybtn{text-align:left;width:100%;font-weight:400}
 .daybtn.none{color:var(--muted)}
 .cnt{margin-left:auto;color:var(--muted);font-size:.8rem;flex:none}
 .panel input[type=text]{flex:1 1 160px}
 .phead{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.phead b{font-family:var(--f-display);font-size:1.4rem}
-.picker #pk-q{flex:none}
-.pklist{flex:1;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.phead input{flex:1;min-width:0;padding:8px 12px;font-size:16px}
+.pkbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:12px;-webkit-overflow-scrolling:touch}
+.pklist{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pklist:empty{display:none}
+input[type=search]{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 .pklist li.item:first-child{border-top:0}
 li.item.picked{background:var(--accent-soft)}
 .pknew{background:var(--card);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
@@ -166,7 +170,7 @@ function bumpQty(it,delta){const k=key(it.n),pp=plannedMap(S).p[k];
 
 let S=JSON.parse(JSON.stringify(SEED));let PL={p:{},by:{}};
 let tab="liste", hideDone=false, db=null, ref=null, saving=false, dirty=false, saveTimer=null, confirmReset=false;
-let dayPick=null, dayQ="", addQ="";
+let dayPick=null, dayQ="", addQ="", mvQ="";
 let editMode=false, selItem=null, delArm=false, pickerDin=null, pickerQ="";
 try{tab=localStorage.getItem("tab")||"liste";hideDone=localStorage.getItem("hide")==="1"}catch(e){}
 try{const l=localStorage.getItem("state");if(l)S=JSON.parse(l)}catch(e){}
@@ -226,6 +230,10 @@ function pickExisting(it){
   if(it.c){it.c=false;toast(it.n+" lagt på listen");addQ="";changed();const i=$("#newitem");if(i)i.focus()}
   else{it.c=true;toast(it.n+" huket av");changed()}
 }
+function mvResHtml(){const q=key(mvQ);if(!q||!selItem)return"";
+  const m=S.items.filter(it=>it!==selItem&&key(it.n).includes(q));
+  if(!m.length)return `<p class="sub" style="margin:0">Ingen varer matcher «${esc(mvQ)}»</p>`;
+  return `<ul class="reslist mvlist">${m.slice(0,40).map(it=>`<li class="res mvr" data-mk="${esc(key(it.n))}"><span>Etter <b>${esc(it.n)}</b></span></li>`).join("")}</ul>`}
 function renderListe(){
   let h=`<div class="toolbar">`;
   if(!editMode)h+=`<label class="tog"><input type="checkbox" id="hide" ${hideDone?"checked":""}> Skjul avhuket</label>`;
@@ -236,7 +244,9 @@ function renderListe(){
   h+=`<div class="group rest" style="margin-top:12px"><ul>${rows.map(itemLi).join("")||`<li class="empty">Alt er avhuket</li>`}</ul></div>`;
   if(editMode&&selItem){
     h+=`<div class="panel"><div class="ptitle">${esc(selItem.n)}</div>
-      <div class="row"><button class="btn small" id="mv-up">↑ Opp</button><button class="btn small" id="mv-down">↓ Ned</button><select id="mv-after" aria-label="Flytt til">${'<option value="">Flytt til…</option>'+posOptions(selItem)}</select></div>
+      <div class="row"><button class="btn small" id="mv-up">↑ Opp</button><button class="btn small" id="mv-down">↓ Ned</button><button class="btn small" id="mv-top">Øverst</button><button class="btn small" id="mv-bot">Nederst</button></div>
+      <div id="mv-res">${mvResHtml()}</div>
+      <div class="row"><input type="search" id="mv-q" placeholder="Flytt etter vare: søk" value="${esc(mvQ)}" autocomplete="off"></div>
       <div class="row"><input type="text" id="mv-name" value="${esc(selItem.n)}" aria-label="Nytt navn"><button class="btn small" id="mv-rename">Endre navn</button></div>
       <div class="row"><button class="btn small" id="mv-del">${delArm?"Trykk igjen for å slette":"Slett vare"}</button><button class="btn small primary" id="mv-done" style="margin-left:auto">Ferdig</button></div></div>`;
   }
@@ -256,13 +266,13 @@ function renderUke(){
 
 /* ---- middager ---- */
 function renderMiddager(){
-  let h=`<h2>Dine middager</h2><div class="groups">`;
+  let h=`<div class="toolbar"><input type="text" id="newdin" placeholder="Ny middag, f.eks. Lasagne"><button class="btn primary" id="adddin">Lag middag</button></div><h2>Dine middager</h2><div class="groups">`;
   for(const d of S.dinners){
     h+=`<div class="group dish"><div class="ghead"><b>${esc(d.name)}</b><button class="btn small" data-deldin="${esc(d.id)}">Slett</button></div>
     <div class="chips">${d.ing.map((i,k)=>`<span class="chip">${esc(i)}${dq(d,key(i))>1?` <b class="cq">×${dq(d,key(i))}</b>`:""}<button data-din="${esc(d.id)}" data-delk="${k}" aria-label="Fjern ${esc(i)}">×</button></span>`).join("")||'<span class="sub">Ingen ingredienser ennå</span>'}</div>
     <div class="addline"><button class="btn small primary" data-pick="${esc(d.id)}">Velg ingredienser fra listen</button></div></div>`;
   }
-  h+=`</div><div class="toolbar"><input type="text" id="newdin" placeholder="Ny middag, f.eks. Lasagne"><button class="btn primary" id="adddin">Lag middag</button></div>`;
+  h+=`</div>`;
   return h;
 }
 
@@ -294,17 +304,14 @@ function setDay(id){S.week[dayPick]=id;applyWeek(S);changed(true);const din=S.di
 function renderPicker(){
   const el=$("#picker");
   if(dayPick){el.hidden=false;document.body.style.overflow="hidden";
-    el.innerHTML=`<div class="phead"><b>${esc(dayPick)}</b><button class="btn small" id="dp-done">Lukk</button></div>
-      <input type="text" id="dp-q" placeholder="Søk etter middag" value="${esc(dayQ)}" autocomplete="off">
-      <div id="dp-new">${dayNewHtml()}</div><ul id="dp-list" class="pklist">${dayListHtml()}</ul>`;
+    el.innerHTML=`<div class="phead"><input type="search" id="dp-q" placeholder="Middag til ${esc(dayPick.toLowerCase())}: søk" value="${esc(dayQ)}" autocomplete="off"><button class="btn small" id="dp-done">Lukk</button></div>
+      <div class="pkbody"><ul id="dp-list" class="pklist">${dayListHtml()}</ul><div id="dp-new">${dayNewHtml()}</div></div>`;
     return}
   const d=S.dinners.find(x=>x.id===pickerDin);
   if(!d){el.hidden=true;document.body.style.overflow="";return}
   el.hidden=false;document.body.style.overflow="hidden";
-  el.innerHTML=`<div class="phead"><b>${esc(d.name)}</b><button class="btn small primary" id="pk-done">Ferdig</button></div>
-    <input type="text" id="pk-q" placeholder="Søk i listen, eller skriv en ny vare" value="${esc(pickerQ)}" autocomplete="off">
-    <div id="pk-new">${pickNewHtml()}</div>
-    <ul id="pk-list" class="pklist">${pickListHtml()}</ul>`;
+  el.innerHTML=`<div class="phead"><input type="search" id="pk-q" placeholder="Ingredienser til ${esc(d.name)}: søk" value="${esc(pickerQ)}" autocomplete="off"><button class="btn small primary" id="pk-done">Ferdig</button></div>
+    <div class="pkbody"><ul id="pk-list" class="pklist">${pickListHtml()}</ul><div id="pk-new">${pickNewHtml()}</div></div>`;
 }
 function refreshPick(){$("#pk-list").innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml()}
 function closePicker(){pickerDin=null;pickerQ="";renderPicker();render()}
@@ -323,11 +330,14 @@ $("#view").addEventListener("click",e=>{
   const t=e.target;
   const qb=t.closest("button.qb");
   if(qb&&qb.dataset.qi!==undefined){bumpQty(S.items[+qb.dataset.qi],+qb.dataset.qd);return}
+  const mv=t.closest("li.mvr");
+  if(mv){placeAt(selItem,"k:"+mv.dataset.mk);mvQ="";changed();scrollSel();toast("Flyttet");return}
+  if(t.id==="mv-top"||t.id==="mv-bot"){placeAt(selItem,t.id==="mv-top"?"top":"end");mvQ="";changed();scrollSel();toast("Flyttet");return}
   const rs=t.closest("li.res");
   if(rs){const it=findItem(rs.dataset.ak);if(it)pickExisting(it);return}
   const li=t.closest("li.item");
   if(li){const it=S.items[+li.dataset.ix];
-    if(editMode){selItem=selItem===it?null:it;delArm=false;render();return}
+    if(editMode){selItem=selItem===it?null:it;delArm=false;mvQ="";render();return}
     it.c=!it.c;changed();return}
   if(t.id==="editmode"){editMode=!editMode;selItem=null;delArm=false;render();return}
   if(t.id==="mv-up"||t.id==="mv-down"){const i=S.items.indexOf(selItem),j=t.id==="mv-up"?i-1:i+1;if(j<0||j>=S.items.length)return;S.items.splice(i,1);S.items.splice(j,0,selItem);changed();scrollSel();return}
@@ -361,7 +371,7 @@ function renameSel(){
 }
 $("#view").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const t=e.target;if(t.id==="mv-name"){renameSel();return}if(t.id==="newitem")addItem();else if(t.id==="newdin")$("#adddin").click()});
 function scrollSel(){const i=S.items.indexOf(selItem);const el=document.querySelector(`li.item[data-ix="${i}"]`);if(el)el.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}
-$("#view").addEventListener("input",e=>{if(e.target.id==="newitem"){addQ=e.target.value;refreshAdd()}});
+$("#view").addEventListener("input",e=>{if(e.target.id==="newitem"){addQ=e.target.value;refreshAdd()}if(e.target.id==="mv-q"){mvQ=e.target.value;$("#mv-res").innerHTML=mvResHtml()}});
 function addItem(){const v=addQ.trim();if(!v)return;
   const m=addMatches();
   if(!$("#newpos")){const ex=findItem(v)||(m.length===1?m[0]:null);if(ex){if(ex.c)pickExisting(ex);else toast(ex.n+" står allerede på listen");}return}
