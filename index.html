@@ -436,7 +436,7 @@ function renderPicker(){
 function refreshPick(){if(dayPick){$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml()}else if(pickerDin&&$("#pk-list")){const l=$("#pk-list"),st=l.parentNode.scrollTop;l.innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml();l.parentNode.scrollTop=st}}
 function closePicker(){pickerDin=null;pickerQ="";dayPick=null;dayQ="";renderPicker();render()}
 
-function setNavH(){const n=document.querySelector("nav");if(n)document.documentElement.style.setProperty("--navh",n.offsetHeight+"px")}
+function setNavH(){const n=document.querySelector("nav");if(n)document.documentElement.style.setProperty("--navh",(n.getBoundingClientRect().height-1)+"px")}
 addEventListener("resize",setNavH);
 function render(){
   setNavH();
