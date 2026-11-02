@@ -123,7 +123,7 @@ li.sec small.left{color:var(--accent);font-weight:700}
 li.item.hdr{background:var(--bg)}
 .pkh{padding:12px 14px 4px;font:600 .85rem var(--f-display);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--line)}
 .pklist .pkh:first-child{border-top:0}
-.shopbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);padding-block:12px;color:var(--muted)}
+.shopbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--navh,62px));z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);padding-block:12px;color:var(--muted)}
 .shopbar .big{font-family:var(--f-display);font-size:1.6rem;color:var(--ink)}
 .shsec{font:600 .85rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
 ul.shop{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -137,6 +137,8 @@ li.sh.done .nm{color:var(--done);text-decoration:line-through}
 .basket{margin-top:20px}
 .basket summary{cursor:pointer;color:var(--muted);font-weight:700;padding:8px 0}
 body.editing .wrap{padding-bottom:440px}
+.stick{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--navh,62px));z-index:4;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.stick .toolbar{margin-top:10px}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 </head>
@@ -335,12 +337,13 @@ function panelHtml(){
 }
 function renderListe(){
   if(shop&&!editMode)return renderShop();
-  let h=`<div class="toolbar">`;
+  let h=`<div class="stick"><div class="toolbar">`;
   if(!editMode)h+=`<button class="btn small primary" id="shopmode">Handlemodus</button><label class="tog"><input type="checkbox" id="hide" ${hideDone?"checked":""}> Skjul avhuket</label>`;
   else h+=`<button class="btn small" id="newsec">+ Ny avdeling</button>`;
   h+=`<button class="btn small${editMode?" primary":""}" id="editmode" style="margin-left:auto">${editMode?"Ferdig":"Endre liste"}</button></div>`;
+  if(!editMode)h+=`<div class="addbox"><input type="search" id="newitem" placeholder="Legg til vare: søk eller skriv ny" value="${esc(addQ)}" autocomplete="off"><div id="addres">${addResHtml()}</div></div>`;
+  h+=`</div>`;
   if(editMode)h+=`<p class="sub" style="margin-top:8px">Trykk på en vare eller avdeling for å flytte, endre navn, legge til notat eller slette.</p>`;
-  else h+=`<h2>Legg til vare</h2><div class="addbox"><input type="search" id="newitem" placeholder="Søk i sortimentet eller skriv ny vare" value="${esc(addQ)}" autocomplete="off"><div id="addres">${addResHtml()}</div></div>`;
   h+=`<div class="group rest" style="margin-top:12px"><ul>`;
   let any=false;
   for(const g of groups()){
@@ -433,7 +436,10 @@ function renderPicker(){
 function refreshPick(){if(dayPick){$("#dp-list").innerHTML=dayListHtml();$("#dp-new").innerHTML=dayNewHtml()}else if(pickerDin&&$("#pk-list")){const l=$("#pk-list"),st=l.parentNode.scrollTop;l.innerHTML=pickListHtml();$("#pk-new").innerHTML=pickNewHtml();l.parentNode.scrollTop=st}}
 function closePicker(){pickerDin=null;pickerQ="";dayPick=null;dayQ="";renderPicker();render()}
 
+function setNavH(){const n=document.querySelector("nav");if(n)document.documentElement.style.setProperty("--navh",n.offsetHeight+"px")}
+addEventListener("resize",setNavH);
 function render(){
+  setNavH();
   PL=planned();
   if(selId&&!S.items[selId])selId=null;
   const ae=document.activeElement,aid=ae&&$("#view").contains(ae)&&ae.id,ss=aid&&ae.selectionStart;
