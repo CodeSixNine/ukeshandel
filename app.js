@@ -422,7 +422,7 @@ function toggleHome(id){const it=I(id);snapUndo();if(it.home){delete it.home;del
 function homeAdd(){const sq=splitQ(homeQ.trim());if(!sq.n)return;const pos=$("#hpos").value;lastPos=pos;lsSet("pos",pos);
   snapUndo();const id=newItem(sq.n,sq.q,pos);putHome(id);homeQ="";changed();toast(sq.n+" lagt i Hjemme",true);setTimeout(()=>{const i=$("#homeq");if(i)i.focus()},0)}
 function renderHjemme(){
-  let h=`<div class="stick"><div class="addbox" style="margin-top:10px"><div class="srow"><input type="search" id="homeq" placeholder="Legg til hjemme: søk eller skriv ny" value="${esc(homeQ)}" autocomplete="off"><button class="btn" id="scanhome" aria-label="Skann strekkode">Skann</button><button class="btn" id="rcptbtn">Kvittering</button></div><div id="homeres">${homeResHtml()}</div></div></div>`;
+  let h=`<div class="stick"><div class="addbox" style="margin-top:10px"><div class="srow two"><input type="search" id="homeq" placeholder="Legg til hjemme: søk eller skriv ny" value="${esc(homeQ)}" autocomplete="off"><button class="btn" id="scanhome" aria-label="Skann strekkode">Skann</button><button class="btn" id="rcptbtn">Kvittering</button></div><div id="homeres">${homeResHtml()}</div></div></div>`;
   const hs=homeIds(),lk=Object.keys(S.left).sort((a,b)=>(S.left[a].exp||"").localeCompare(S.left[b].exp||""));
   if(!hs.length&&!lk.length)h+=`<p class="empty">Ingenting er registrert hjemme ennå. Søk etter varer over, skann en strekkode, eller trykk «Ferdig handlet» i handlemodus, så havner det dere kjøpte her.</p>`;
   if(lk.length)h+=`<h2>Rester</h2><ul class="hlist">${lk.map(leftRow).join("")}</ul>`;
