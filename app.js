@@ -22,6 +22,7 @@ function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.get
 function weekKey(ms){const d=new Date(ms);const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);return t.getUTCFullYear()+"-"+pad(isoWeek(d))}
 function todayName(){return DAYS[(new Date().getDay()+6)%7]}
 function kr(n){return Math.round(n).toLocaleString("nb-NO")+" kr"}
+function kr2(n){return (+n||0).toLocaleString("nb-NO",{minimumFractionDigits:2,maximumFractionDigits:2})+" kr"}
 function safeUrl(u){u=String(u||"").trim();if(!u)return"";if(!/^https?:\/\//i.test(u))u="https://"+u;return u}
 function num(v){const n=parseFloat(String(v).replace(",",".").replace(/[^\d.]/g,""));return isFinite(n)?n:NaN}
 
@@ -522,67 +523,133 @@ function downloadCopy(){
 /* ===== Kvittering: les skjermbilde, finn varer og priser ===== */
 const TESS_URL="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js";
 function normName(s){return key(s).replace(/\d+([.,]\d+)?\s*(%|kg|g|gr|l|ltr|cl|dl|ml|stk|pk)?/g," ").replace(/[^a-zæøåäöé ]/g," ").replace(/\b(stk|kg|gr|ltr|pk|pakke|pr|x)\b/g," ").replace(/\s+/g," ").trim()}
-function tokHit(t,words){return words.some(w=>w===t||(t.length>=4&&(w.startsWith(t)||w.endsWith(t)))||(t.length>=6&&w.includes(t)))}
+function stem(w){return w.length>5?w.replace(/(ene|er|en|et|e|r)$/,""):w}
+function tokHit(t,w){return w===t||stem(w)===stem(t)||(t.length>=4&&(w.startsWith(t)||w.endsWith(t)))||(t.length>=6&&w.includes(t))}
+/* Varenavnet på kvitteringen starter som regel med selve varen ("Løk sprøstekt", "Paprika rød").
+   Minst ett ord fra varen må derfor treffe ett av de to første ordene, så "Fløtepotet med hvitløk" ikke blir Hvitløk. */
 function matchItem(txt){
   const k=normName(txt);if(!k)return null;
   if(S.rmap[k]&&S.items[S.rmap[k]]&&!I(S.rmap[k]).h)return S.rmap[k];
-  const words=k.split(" ");let best=null,bs=0;
+  const words=k.split(" "),head=words.slice(0,2);let best=null,bs=0;
   for(const id of itemIds()){const toks=normName(I(id).n).split(" ").filter(t=>t.length>=3);if(!toks.length)continue;
-    if(toks.every(t=>tokHit(t,words))){const s=toks.join("").length*10+toks.length;if(s>bs){bs=s;best=id}}}
+    if(toks.every(t=>words.some(w=>tokHit(t,w)))&&toks.some(t=>head.some(w=>tokHit(t,w)))){const s=toks.join("").length*10+toks.length;if(s>bs){bs=s;best=id}}}
   return best;
 }
 function prettyName(s){const n=normName(s);return n?n.charAt(0).toUpperCase()+n.slice(1):String(s).trim()}
-const RC_SKIP=/^(sum|total|totalt|å ?betale|a ?betale|betalt|bank|bankaxept|kort|visa|mastercard|mva|grunnlag|netto|veksel|kontant|tilgode|subtotal|kasse|kvittering|org|foretak|tlf|telefon|dato|tid\b|ref|aid|bax|trans|termin|kunde|medlem|trumf|bonus|du (har )?spar|herav|avrunding|antall|vipps|gavekort|refusjon|endring)/i;
+/* Gjett avdeling for nye varer ut fra navnet. Første treff vinner. */
+const SEC_GUESS=[
+  [/taco|tortilla|salsa|guacamole|nachos/,"taco"],
+  [/pepsi|cola|brus|juice|saft|vann\b|energi|monster|red ?bull|\bøl\b|smoothie/,"drikke"],
+  [/kjøtt|kylling|bacon|pølse|skinke|salami|filet|deig|biff|svin|postei|pålegg|karbonade|laks|torsk|fisk|reke/,"kjøtt"],
+  [/\bost\b|ost$|cheese|apetina|feta|mozzarella|parmesan|parmigiano|revet|norvegia|jarlsberg|brunost|cottage/,"ost"],
+  [/melk|fløte|rømme|creme fraiche|crème|yoghurt|skyr|smør|margarin|\begg\b|kesam/,"meieri"],
+  [/salat|agurk|paprika|løk|gulrot|tomat|potet|banan|eple|appelsin|drue|bær|brokkoli|blomkål|avocado|avokado|sitron|lime|squash|sopp|ingefær|frukt|grønt/,"frukt"],
+  [/brød|knekkebrød|rundstykke|lompe|baguett|pita|naan|bolle|kaker?\b/,"brød"],
+  [/pasta|spaghetti|fusilli|penne|makaroni|\bris\b|nudler|lasagne|couscous/,"pasta"],
+  [/krydder|spice|saus|ketchup|majones|sennep|pesto|dressing|aioli|buljong/,"krydder"],
+  [/frossen|fryst|frys|pommes|\bis\b|iskrem/,"frys"],
+  [/chips|doodles|cornitas|snacks|sjokolade|godteri|smågodt|potetgull|popcorn|nøtter/,"snacks"],
+  [/toalett|tørkepapir|dopapir|oppvask|vaskemiddel|zalo|søppel|folie|børste|klut|tørkerull/,"hushold"],
+  [/tann|sjampo|shampoo|deo|såpe|ibux|paracet|plaster|bind|q-tips/,"hygiene"],
+  [/mel\b|sukker|gryn|bakepulver|gjær|hermetikk|bønner|mais/,"tørr"]];
+function guessSec(name){
+  const k=key(name),hs=headerIds();
+  for(const [re,w] of SEC_GUESS)if(re.test(k)){const h=hs.find(id=>key(I(id).n).includes(w==="frukt"?"frukt":w==="pasta"?"pasta":w==="hushold"?"hushold":w==="hygiene"?"hygiene":w==="tørr"?"tørr":w));if(h)return h}
+  return null;
+}
+const RC_SKIP=/^(sum\b|total|å ?betale|a ?betale|til betaling|betalt|bank|bankaxept|kort|visa|mastercard|mva|grunnlag|netto|veksel|kontant|tilgode|subtotal|kasse|kvittering|org|foretak|tlf|telefon|dato|tid\b|ref|aid|bax|trans|termin|kunde|medlem|trumf|bonus|du (har )?spar|herav|avrunding|antall|vipps|gavekort|refusjon|endring|vi har dessverre|grunnbonus|kiwi pluss)/i;
+const RC_TOTAL=/^(kjøpesum|kjopesum|sum å betale|sum\b|totalt?\b(?!.*bonus)|å ?betale|a ?betale|til betaling|beløp)/i;
 function parseReceipt(text){
   const raw=String(text).split(/\n/).map(l=>l.replace(/[|]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);
-  let store="",date=null,total=null,lastText=null;const lines=[];
+  let store="",date=null,total=null,lastText=null,done=false,pant=0;const lines=[];
   const chain=/(rema\s*1000|kiwi|coop\s*(extra|prix|mega|obs|marked)|coop|extra|meny|spar|joker|bunnpris|obs|europris|oda)/i;
-  raw.forEach((l,i)=>{
+  const stkLine=/^(\d+)\s*(stk|st)\b/i;
+  for(let i=0;i<raw.length&&!done;i++){const l=raw[i];
     if(!store&&i<10){const m=l.match(chain);if(m)store=m[0].replace(/\s+/g," ").toUpperCase()}
     if(!date){const m=l.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b/);if(m){let y=+m[3];if(y<100)y+=2000;const d=new Date(y,+m[2]-1,+m[1],12);if(!isNaN(d)&&y>2010&&y<2100)date=d.getTime()}}
-    const pm=l.match(/(-?\s?\d{1,5}[.,]\d{2})\s*(kr|nok)?\s*[a-z*]?$/i);
-    if(!pm){if(/[a-zæøå]{3}/i.test(l)&&!RC_SKIP.test(l)&&!/\d{2}[:.]\d{2}/.test(l))lastText=l;return}
-    const price=parseFloat(pm[1].replace(/\s/g,"").replace(",","."));
+    if(RC_TOTAL.test(l)){const tm=l.match(/(\d{1,3}(?:[ .\u00a0]\d{3})+[.,]\d{2}|\d{1,6}[.,]\d{2})\s*(kr|nok)?\s*$/i);if(tm){total=parseFloat(tm[1].replace(/[ . ](?=\d{3})/g,"").replace(",","."));done=true;continue}}
+    const pm=l.match(/(-?\s?\d{1,5}[.,]\s?\d{2}|\d{3,5}(?=\s*kr))\s*(kr|nok)?\s*[a-z*.,;:'"]?$/i);
+    const sm=l.match(stkLine);
+    if(!pm){
+      if(sm){const prev=lines[lines.length-1];if(prev&&prev.fresh){prev.q=+sm[1];prev.fresh=false}continue}
+      if(/[a-zæøå]{3}/i.test(l)&&!RC_SKIP.test(l)&&!/\d{2}[:.]\d{2}/.test(l))lastText=l;
+      continue}
+    const ps=pm[1].replace(/\s/g,""),price=/[.,]/.test(ps)?parseFloat(ps.replace(",",".")):parseInt(ps,10)/100;
     let name=l.slice(0,pm.index).trim();
-    if(/^(sum|total|totalt|å ?betale|a ?betale)\b/i.test(name)){if(price>0)total=price;return}
-    if(RC_SKIP.test(name)||/pant/i.test(name))return;
-    if(price<0||/^(rabatt|kampanje|tilbud|nedslag|kupong|medlemsrabatt)/i.test(name)){if(lines.length)lines[lines.length-1].p=Math.max(0,Math.round((lines[lines.length-1].p+(price<0?price:-price))*100)/100);return}
+    if(sm){/* «2 stk - 1 % Trumf-Bonus 189,80»: prisen står på antallslinjen */
+      if(lastText){lines.push({txt:lastText,p:price,q:+sm[1],fresh:false});lastText=null}
+      else{const prev=lines[lines.length-1];if(prev){prev.q=+sm[1];prev.fresh=false}}
+      continue}
+    if(/pant/i.test(name)&&!/retur/i.test(name)&&price>0)pant+=price;
+    if(RC_SKIP.test(name)||/pant/i.test(name)){lastText=null;const pv=lines[lines.length-1];if(pv)pv.fresh=false;continue}
+    if(price<0||/^(rabatt|kampanje|tilbud|nedslag|kupong|medlemsrabatt)/i.test(name)){if(lines.length)lines[lines.length-1].p=Math.max(0,Math.round((lines[lines.length-1].p+(price<0?price:-price))*100)/100);continue}
     const qm=name.match(/^(\d+)\s*(stk|st)?\s*[x×*]\s*(\d+[.,]\d{2})?$/i);
     if(qm||!/[a-zæøå]{2}/i.test(name.replace(/\b(stk|st|kg|x)\b/gi,""))){
-      const q=qm?+qm[1]:1;
-      const prev=lines[lines.length-1];
-      if(lastText&&(!prev||prev.txt!==lastText)){lines.push({txt:lastText,p:price,q});lastText=null}
+      const q=qm?+qm[1]:1,prev=lines[lines.length-1];
+      if(lastText&&(!prev||prev.txt!==lastText)){lines.push({txt:lastText,p:price,q,fresh:false});lastText=null}
       else if(prev){prev.q=q;prev.p=price}
-      return;
-    }
+      continue}
     let q=1;const im=name.match(/^(\d+)\s*[x×*]\s+(.*)$/i);if(im){q=+im[1];name=im[2]}
     const tm=name.match(/^(.*?)\s+(\d+)\s*[x×*]\s*\d+[.,]\d{2}$/i);if(tm){name=tm[1];q=+tm[2]}
     name=name.replace(/^\d{3,}\s+/,"").replace(/\s+\d{1,2}\s*%$/,"").trim();
-    if(!/[a-zæøå]{2}/i.test(name))return;
-    lines.push({txt:name,p:price,q});lastText=null;
-  });
-  for(const ln of lines){ln.id=matchItem(ln.txt);ln.nm=ln.id?I(ln.id).n:prettyName(ln.txt);ln.on=true;ln.auto=!!ln.id}
-  return {store,date,total,lines};
+    if(!/[a-zæøå]{2}/i.test(name))continue;
+    lines.push({txt:name,p:price,q,fresh:true});lastText=null;
+  }
+  for(const ln of lines){delete ln.fresh;ln.id=matchItem(ln.txt);ln.nm=ln.id?I(ln.id).n:prettyName(ln.txt);ln.on=true;ln.auto=!!ln.id}
+  return {store,date,total,lines,pant:Math.round(pant*100)/100};
 }
+/* Gråtoner, større tekst, og lys tekst på mørk bakgrunn (som summen hos Kiwi) snus til mørk tekst på lys. */
 async function prepImage(file){
   const bmp=await createImageBitmap(file);
-  const sc=bmp.width<900?2:bmp.width<1300?1.5:1;
+  const sc=bmp.width<650?3:bmp.width<900?2:bmp.width<1300?1.5:1;
   const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
-  const g=c.getContext("2d");g.filter="grayscale(1) contrast(1.15)";g.drawImage(bmp,0,0,c.width,c.height);return c;
+  const g=c.getContext("2d",{willReadFrequently:true});g.imageSmoothingQuality="high";g.filter="grayscale(1)";g.drawImage(bmp,0,0,c.width,c.height);g.filter="none";
+  const im=g.getImageData(0,0,c.width,c.height),d=im.data,W=c.width;
+  for(let y=0;y<c.height;y++){let s=0;const o=y*W*4;for(let x=0;x<W;x++)s+=d[o+x*4];
+    const inv=s/W<110;
+    for(let x=0;x<W;x++){const j=o+x*4;if(!inv)continue;let v=255-d[j];v=v>=175?255:v<=95?0:Math.round((v-95)*255/80);d[j]=d[j+1]=d[j+2]=v}}
+  g.putImageData(im,0,0);return c;
+}
+/* To omganger: hele bildet for varenavn, og høyre kolonne for seg for prisene.
+   Prisen kobles til nærmeste linje i høyden. Det tåler priser som står midt mellom navn og «1 stk». */
+function ocrLines(data){const out=[];for(const bl of data.blocks||[])for(const pa of bl.paragraphs||[])for(const ln of pa.lines||[])out.push(ln);return out}
+const PRICE_RE=/-?\d{1,3}(?:[ . ]\d{3})+[.,]\s?\d{2}|-?\d{1,5}[.,]\s?\d{2}|\d{3,5}(?=\s*kr)/;
+function combineColumns(A,P,cut){
+  const rows=[];
+  for(const ln of ocrLines(A)){const ws=(ln.words||[]).filter(w=>w.bbox.x0<cut-4&&String(w.text).trim());if(!ws.length)continue;
+    rows.push({y0:Math.min(...ws.map(w=>w.bbox.y0)),y1:Math.max(...ws.map(w=>w.bbox.y1)),t:ws.map(w=>w.text).join(" "),p:null,pd:1e9})}
+  const prices=[];
+  for(const ln of ocrLines(P)){const t=String(ln.text).replace(/\s+/g," ").trim();if(!PRICE_RE.test(t))continue;prices.push({y:(ln.bbox.y0+ln.bbox.y1)/2,t})}
+  for(const pr of prices){let best=null,bd=1e9;
+    for(const r of rows){const d=Math.abs((r.y0+r.y1)/2-pr.y);if(d<bd){bd=d;best=r}}
+    if(best&&bd<(best.y1-best.y0)*2+30&&bd<best.pd){best.p=pr.t;best.pd=bd}
+    else rows.push({y0:pr.y,y1:pr.y,t:"",p:pr.t,pd:0})}
+  rows.sort((a,b)=>a.y0-b.y0);
+  return rows.map(r=>(r.t+(r.p?" "+r.p:"")).trim()).filter(Boolean).join("\n");
+}
+function pickParse(a,b){
+  const sa=a.lines.reduce((s,l)=>s+l.p,0),sb=b.lines.reduce((s,l)=>s+l.p,0),tot=b.total||a.total;
+  if(tot){const da=Math.abs(tot-sa)/tot,db=Math.abs(tot-sb)/tot;if(Math.abs(da-db)>.02)return db<da?b:a}
+  return b.lines.length>=a.lines.length?b:a;
 }
 async function readReceipt(file){
-  OV={type:"rcpt",stage:"read",pct:0};renderOverlay();
+  OV={type:"rcpt",stage:"read",pct:0,pass:1};renderOverlay();
   try{await loadScript(TESS_URL,"Tesseract")}catch(e){OV=null;renderOverlay();toast("Kunne ikke laste tekstgjenkjenningen. Sjekk nettforbindelsen.");return}
-  let text="";
+  let res=null,raw="";
   try{const img=await prepImage(file);
-    const r=await Tesseract.recognize(img,"nor",{logger:m=>{if(OV&&OV.type==="rcpt"&&OV.stage==="read"){if(m.status==="recognizing text")OV.pct=Math.round(m.progress*100);OV.msg=m.status;const b=$("#rc-pct");if(b)b.textContent=rcStatus(OV)}}});
-    text=r.data.text||""}
+    const w=await Tesseract.createWorker("nor",1,{logger:m=>{if(OV&&OV.type==="rcpt"&&OV.stage==="read"){if(m.status==="recognizing text")OV.pct=Math.round(m.progress*100);OV.msg=m.status;const b=$("#rc-pct");if(b)b.textContent=rcStatus(OV)}}});
+    try{
+      const A=(await w.recognize(img,{},{blocks:true,text:true})).data;raw=A.text||"";
+      const W=img.width,cut=Math.round(W*.68);OV.pass=2;
+      const P=(await w.recognize(img,{rectangle:{left:cut,top:0,width:W-cut,height:img.height}},{blocks:true,text:true})).data;
+      const plain=parseReceipt(raw),cols=parseReceipt(combineColumns(A,P,cut));
+      res=pickParse(plain,cols);
+    }finally{w.terminate()}}
   catch(e){OV=null;renderOverlay();toast("Klarte ikke å lese bildet.");return}
-  const pr=parseReceipt(text);
-  if(!pr.lines.length){OV={type:"rcpt",stage:"none",raw:text};renderOverlay();return}
-  OV=Object.assign({type:"rcpt",stage:"review",raw:text,pick:null,q:""},pr);renderOverlay();
+  if(!res.lines.length){OV={type:"rcpt",stage:"none",raw};renderOverlay();return}
+  OV=Object.assign({type:"rcpt",stage:"review",raw,pick:null,q:""},res);renderOverlay();
 }
-function rcStatus(o){return /recogniz/.test(o.msg||"")?"Leser tekst … "+o.pct+" %":/load|initializ/.test(o.msg||"")?"Laster tekstgjenkjenning (første gang tar det litt tid) …":"Forbereder …"}
+function rcStatus(o){return /recogniz/.test(o.msg||"")?(o.pass===2?"Leser prisene … ":"Leser varene … ")+o.pct+" %":/load|initializ/.test(o.msg||"")?"Laster tekstgjenkjenning (første gang tar det litt tid) …":"Forbereder …"}
 function rcptHtml(o){
   if(o.stage==="read")return `<div class="phead"><b class="ptl">Kvittering</b><button class="btn small" id="ov-close">Avbryt</button></div><div class="pkbody"><p class="sub" id="rc-pct">${esc(rcStatus(o))}</p></div>`;
   if(o.stage==="none")return `<div class="phead"><b class="ptl">Kvittering</b><button class="btn small" id="ov-close">Lukk</button></div><div class="pkbody"><p class="sub" style="margin:0">Fant ingen varelinjer med pris. Prøv et skarpere skjermbilde der hele kvitteringen er med, gjerne fra butikkens app.</p>${o.raw?`<details><summary class="sub">Teksten appen leste</summary><textarea class="sharetxt" readonly>${esc(o.raw)}</textarea></details>`:""}</div>`;
@@ -595,18 +662,18 @@ function rcptHtml(o){
   const sumL=o.lines.filter(l=>l.on).reduce((a,l)=>a+(l.p||0),0);
   const nNew=o.lines.filter(l=>l.on&&!l.id&&!findByName(l.nm)).length;
   return `<div class="phead"><b class="ptl">Kvittering${o.store?": "+esc(o.store):""}</b><button class="btn small primary" id="rc-save">Lagre</button><button class="btn small" id="ov-close">Avbryt</button></div>
-    <div class="pkbody"><p class="sub" style="margin:0">${o.date?new Date(o.date).toLocaleDateString("nb-NO")+" · ":""}${o.total?"Sum på kvitteringen: <b>"+kr(o.total)+"</b> · ":""}Valgte linjer: <b>${kr(sumL)}</b>${o.total&&Math.abs(o.total-sumL)>1?' <span class="warnt">(avviker, sjekk linjene)</span>':""}</p>
+    <div class="pkbody"><p class="sub" style="margin:0">${o.date?new Date(o.date).toLocaleDateString("nb-NO")+" · ":""}${o.total?"Sum på kvitteringen: <b>"+kr2(o.total)+"</b> · ":""}Valgte linjer: <b>${kr2(sumL)}</b>${o.pant?" + pant "+kr2(o.pant):""}${o.total&&Math.abs(o.total-sumL-(o.pant||0))>1?' <span class="warnt">(avviker, sjekk linjene)</span>':o.total?' <span class="okt">✓ stemmer</span>':""}</p>
     <p class="sub" style="margin:0">Trykk på et navn for å koble linjen til riktig vare. Det appen lærer, husker den neste gang.</p>
     <ul class="pklist">${o.lines.map((l,i)=>`<li class="item rcl${l.on?"":" off"}"><input type="checkbox" data-rcon="${i}" ${l.on?"checked":""} aria-label="Ta med ${esc(l.txt)}"><button class="rcname" data-rcpick="${i}"><span>${l.id?esc(I(l.id).n):"Ny vare: "+esc(l.nm)}${l.q>1?" ×"+l.q:""}</span><small class="by">${esc(l.txt)}${l.id&&!l.auto?" · koblet av deg":""}</small></button><input type="text" inputmode="decimal" class="rcp" data-rcp="${i}" value="${esc(String(l.p.toFixed(2)).replace(".",","))}" aria-label="Pris for ${esc(l.txt)}"></li>`).join("")}</ul>
-    ${nNew?`<label class="fl">${nNew} ${nNew===1?"ny vare legges":"nye varer legges"} i<select id="rc-pos">${posOptions(lastPos)}</select></label>`:""}
+    ${nNew?`<label class="fl">${nNew} ${nNew===1?"ny vare legges":"nye varer legges"} i<select id="rc-pos"><option value="auto"${o.pos==="auto"||!o.pos?" selected":""}>Avdeling gjettet ut fra navnet</option>${posOptions(o.pos||"")}</select></label>`:""}
     <p class="sub" style="margin:0">Lagre setter pris på varene, legger dem i Hjemme, huker av det som sto på handlelisten og fører beløpet i budsjettet.</p></div>`;
 }
 function saveReceipt(o){
-  const pos=$("#rc-pos")?$("#rc-pos").value:lastPos;lastPos=pos;lsSet("pos",pos);
+  const pos=$("#rc-pos")?$("#rc-pos").value:"auto";
   snapUndo();const got=[];let sum=0;
   for(const l of o.lines){if(!l.on)continue;
     let id=l.id&&S.items[l.id]?l.id:findByName(l.nm);
-    if(!id)id=newItem(l.nm,1,pos);
+    if(!id){if(pos==="auto"){const s=guessSec(l.nm);id=newItem(l.nm,1,s?"s:"+s:"end")}else id=newItem(l.nm,1,pos)}
     const it=I(id);if(l.p>0)it.pr=Math.round(l.p/(l.q||1)*100)/100;
     putHome(id);if(it.c===false)gotIt(id);
     if(!l.auto||!l.id)S.rmap[normName(l.txt)]=id;
@@ -621,7 +688,7 @@ function saveReceipt(o){
 function receiptsHtml(){
   const rs=Object.values(S.hist).filter(t=>t.rc).sort((a,b)=>b.at-a.at).slice(0,8);
   let h=`<div class="row" style="margin-top:10px"><button class="btn small primary" id="rcptbtn2">Les kvittering</button></div>`;
-  if(rs.length)h+=`<ul class="mlist" style="margin-top:8px">${rs.map(t=>`<li><details class="rcd"><summary><span>${new Date(t.at).toLocaleDateString("nb-NO")}${t.sn?" · "+esc(t.sn):""}</span><b>${kr(t.sum||0)}</b></summary><ul class="mlist">${(t.lines||[]).map(l=>`<li><span>${esc(l.n)}</span><small>${kr(l.p||0)}</small></li>`).join("")}</ul></details></li>`).join("")}</ul>`;
+  if(rs.length)h+=`<ul class="mlist" style="margin-top:8px">${rs.map(t=>`<li><details class="rcd"><summary><span>${new Date(t.at).toLocaleDateString("nb-NO")}${t.sn?" · "+esc(t.sn):""}</span><b>${kr2(t.sum||0)}</b></summary><ul class="mlist">${(t.lines||[]).map(l=>`<li><span>${esc(l.n)}</span><small>${kr2(l.p||0)}</small></li>`).join("")}</ul></details></li>`).join("")}</ul>`;
   return h;
 }
 
@@ -978,7 +1045,7 @@ $("#picker").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const id=e
   if(id==="sc-q"&&$("#sc-add"))$("#sc-add").click();
   if(id==="newstore")$("#addstore").click();
   if(id==="dn-sum")$("#dn-ok").click()});
-$("#picker").addEventListener("change",e=>{if(e.target.dataset.rcp!==undefined&&OV&&OV.type==="rcpt"){renderOverlay();return}if(e.target.id==="rc-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}if(e.target.id==="sc-pos"||e.target.id==="pk-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}});
+$("#picker").addEventListener("change",e=>{if(e.target.dataset.rcp!==undefined&&OV&&OV.type==="rcpt"){renderOverlay();return}if(e.target.id==="rc-pos"&&OV){OV.pos=e.target.value}if(e.target.id==="sc-pos"||e.target.id==="pk-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}});
 function afterIng(d,addedId){if(addedId&&DAYS.some(day=>S.dinners[S.week[day]]===d)&&!I(addedId).home)need(addedId,false);changed(true)}
 
 /* ===== Nytt siden sist: husk når appen sist var åpen ===== */
