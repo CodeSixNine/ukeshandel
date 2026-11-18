@@ -66,7 +66,7 @@ function toV3(src){
 }
 
 /* ===== Tilstand ===== */
-const MAPS=["items","dinners","week","wp","stores","hist","cooked","left","waste","codes","cfg"];
+const MAPS=["items","dinners","week","wp","stores","hist","cooked","left","waste","codes","cfg","rmap"];
 let S=toV3(SEED),B=null,PL={p:{},by:{}},ME={name:""};
 function ensure(){for(const k of MAPS)if(!isObj(S[k]))S[k]={};if(!isObj(S.cfg.ign))S.cfg.ign={}}
 ensure();
@@ -421,7 +421,7 @@ function toggleHome(id){const it=I(id);snapUndo();if(it.home){delete it.home;del
 function homeAdd(){const sq=splitQ(homeQ.trim());if(!sq.n)return;const pos=$("#hpos").value;lastPos=pos;lsSet("pos",pos);
   snapUndo();const id=newItem(sq.n,sq.q,pos);putHome(id);homeQ="";changed();toast(sq.n+" lagt i Hjemme",true);setTimeout(()=>{const i=$("#homeq");if(i)i.focus()},0)}
 function renderHjemme(){
-  let h=`<div class="stick"><div class="addbox" style="margin-top:10px"><div class="srow"><input type="search" id="homeq" placeholder="Legg til hjemme: søk eller skriv ny" value="${esc(homeQ)}" autocomplete="off"><button class="btn" id="scanhome" aria-label="Skann strekkode">Skann</button></div><div id="homeres">${homeResHtml()}</div></div></div>`;
+  let h=`<div class="stick"><div class="addbox" style="margin-top:10px"><div class="srow"><input type="search" id="homeq" placeholder="Legg til hjemme: søk eller skriv ny" value="${esc(homeQ)}" autocomplete="off"><button class="btn" id="scanhome" aria-label="Skann strekkode">Skann</button><button class="btn" id="rcptbtn">Kvittering</button></div><div id="homeres">${homeResHtml()}</div></div></div>`;
   const hs=homeIds(),lk=Object.keys(S.left).sort((a,b)=>(S.left[a].exp||"").localeCompare(S.left[b].exp||""));
   if(!hs.length&&!lk.length)h+=`<p class="empty">Ingenting er registrert hjemme ennå. Søk etter varer over, skann en strekkode, eller trykk «Ferdig handlet» i handlemodus, så havner det dere kjøpte her.</p>`;
   if(lk.length)h+=`<h2>Rester</h2><ul class="hlist">${lk.map(leftRow).join("")}</ul>`;
@@ -474,7 +474,7 @@ async function shareList(){
 
 /* ===== Strekkoder ===== */
 const ZXING_URL="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
-function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)&&window.ZXing)return res();const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("load"));document.head.appendChild(s)})}
+function loadScript(src,glob){glob=glob||"ZXing";return new Promise((res,rej)=>{if(window[glob])return res();const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("load"));document.head.appendChild(s)})}
 async function shrink(file,max){const bmp=await createImageBitmap(file);const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);return c.toDataURL("image/jpeg",.92)}
 async function decodeBarcode(file){
   try{if("BarcodeDetector" in window){const fm=await BarcodeDetector.getSupportedFormats();if(fm&&fm.length){const det=new BarcodeDetector({formats:fm});const r=await det.detect(await createImageBitmap(file));if(r&&r.length)return String(r[0].rawValue)}}}catch(e){}
@@ -516,6 +516,113 @@ function downloadCopy(){
   const blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ukeshandel-"+ymd(new Date())+".json";document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+
+
+/* ===== Kvittering: les skjermbilde, finn varer og priser ===== */
+const TESS_URL="https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js";
+function normName(s){return key(s).replace(/\d+([.,]\d+)?\s*(%|kg|g|gr|l|ltr|cl|dl|ml|stk|pk)?/g," ").replace(/[^a-zæøåäöé ]/g," ").replace(/\b(stk|kg|gr|ltr|pk|pakke|pr|x)\b/g," ").replace(/\s+/g," ").trim()}
+function tokHit(t,words){return words.some(w=>w===t||(t.length>=4&&(w.startsWith(t)||w.endsWith(t)))||(t.length>=6&&w.includes(t)))}
+function matchItem(txt){
+  const k=normName(txt);if(!k)return null;
+  if(S.rmap[k]&&S.items[S.rmap[k]]&&!I(S.rmap[k]).h)return S.rmap[k];
+  const words=k.split(" ");let best=null,bs=0;
+  for(const id of itemIds()){const toks=normName(I(id).n).split(" ").filter(t=>t.length>=3);if(!toks.length)continue;
+    if(toks.every(t=>tokHit(t,words))){const s=toks.join("").length*10+toks.length;if(s>bs){bs=s;best=id}}}
+  return best;
+}
+function prettyName(s){const n=normName(s);return n?n.charAt(0).toUpperCase()+n.slice(1):String(s).trim()}
+const RC_SKIP=/^(sum|total|totalt|å ?betale|a ?betale|betalt|bank|bankaxept|kort|visa|mastercard|mva|grunnlag|netto|veksel|kontant|tilgode|subtotal|kasse|kvittering|org|foretak|tlf|telefon|dato|tid\b|ref|aid|bax|trans|termin|kunde|medlem|trumf|bonus|du (har )?spar|herav|avrunding|antall|vipps|gavekort|refusjon|endring)/i;
+function parseReceipt(text){
+  const raw=String(text).split(/\n/).map(l=>l.replace(/[|]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);
+  let store="",date=null,total=null,lastText=null;const lines=[];
+  const chain=/(rema\s*1000|kiwi|coop\s*(extra|prix|mega|obs|marked)|coop|extra|meny|spar|joker|bunnpris|obs|europris|oda)/i;
+  raw.forEach((l,i)=>{
+    if(!store&&i<10){const m=l.match(chain);if(m)store=m[0].replace(/\s+/g," ").toUpperCase()}
+    if(!date){const m=l.match(/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b/);if(m){let y=+m[3];if(y<100)y+=2000;const d=new Date(y,+m[2]-1,+m[1],12);if(!isNaN(d)&&y>2010&&y<2100)date=d.getTime()}}
+    const pm=l.match(/(-?\s?\d{1,5}[.,]\d{2})\s*(kr|nok)?\s*[a-z*]?$/i);
+    if(!pm){if(/[a-zæøå]{3}/i.test(l)&&!RC_SKIP.test(l)&&!/\d{2}[:.]\d{2}/.test(l))lastText=l;return}
+    const price=parseFloat(pm[1].replace(/\s/g,"").replace(",","."));
+    let name=l.slice(0,pm.index).trim();
+    if(/^(sum|total|totalt|å ?betale|a ?betale)\b/i.test(name)){if(price>0)total=price;return}
+    if(RC_SKIP.test(name)||/pant/i.test(name))return;
+    if(price<0||/^(rabatt|kampanje|tilbud|nedslag|kupong|medlemsrabatt)/i.test(name)){if(lines.length)lines[lines.length-1].p=Math.max(0,Math.round((lines[lines.length-1].p+(price<0?price:-price))*100)/100);return}
+    const qm=name.match(/^(\d+)\s*(stk|st)?\s*[x×*]\s*(\d+[.,]\d{2})?$/i);
+    if(qm||!/[a-zæøå]{2}/i.test(name.replace(/\b(stk|st|kg|x)\b/gi,""))){
+      const q=qm?+qm[1]:1;
+      const prev=lines[lines.length-1];
+      if(lastText&&(!prev||prev.txt!==lastText)){lines.push({txt:lastText,p:price,q});lastText=null}
+      else if(prev){prev.q=q;prev.p=price}
+      return;
+    }
+    let q=1;const im=name.match(/^(\d+)\s*[x×*]\s+(.*)$/i);if(im){q=+im[1];name=im[2]}
+    const tm=name.match(/^(.*?)\s+(\d+)\s*[x×*]\s*\d+[.,]\d{2}$/i);if(tm){name=tm[1];q=+tm[2]}
+    name=name.replace(/^\d{3,}\s+/,"").replace(/\s+\d{1,2}\s*%$/,"").trim();
+    if(!/[a-zæøå]{2}/i.test(name))return;
+    lines.push({txt:name,p:price,q});lastText=null;
+  });
+  for(const ln of lines){ln.id=matchItem(ln.txt);ln.nm=ln.id?I(ln.id).n:prettyName(ln.txt);ln.on=true;ln.auto=!!ln.id}
+  return {store,date,total,lines};
+}
+async function prepImage(file){
+  const bmp=await createImageBitmap(file);
+  const sc=bmp.width<900?2:bmp.width<1300?1.5:1;
+  const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+  const g=c.getContext("2d");g.filter="grayscale(1) contrast(1.15)";g.drawImage(bmp,0,0,c.width,c.height);return c;
+}
+async function readReceipt(file){
+  OV={type:"rcpt",stage:"read",pct:0};renderOverlay();
+  try{await loadScript(TESS_URL,"Tesseract")}catch(e){OV=null;renderOverlay();toast("Kunne ikke laste tekstgjenkjenningen. Sjekk nettforbindelsen.");return}
+  let text="";
+  try{const img=await prepImage(file);
+    const r=await Tesseract.recognize(img,"nor",{logger:m=>{if(OV&&OV.type==="rcpt"&&OV.stage==="read"){if(m.status==="recognizing text")OV.pct=Math.round(m.progress*100);OV.msg=m.status;const b=$("#rc-pct");if(b)b.textContent=rcStatus(OV)}}});
+    text=r.data.text||""}
+  catch(e){OV=null;renderOverlay();toast("Klarte ikke å lese bildet.");return}
+  const pr=parseReceipt(text);
+  if(!pr.lines.length){OV={type:"rcpt",stage:"none",raw:text};renderOverlay();return}
+  OV=Object.assign({type:"rcpt",stage:"review",raw:text,pick:null,q:""},pr);renderOverlay();
+}
+function rcStatus(o){return /recogniz/.test(o.msg||"")?"Leser tekst … "+o.pct+" %":/load|initializ/.test(o.msg||"")?"Laster tekstgjenkjenning (første gang tar det litt tid) …":"Forbereder …"}
+function rcptHtml(o){
+  if(o.stage==="read")return `<div class="phead"><b class="ptl">Kvittering</b><button class="btn small" id="ov-close">Avbryt</button></div><div class="pkbody"><p class="sub" id="rc-pct">${esc(rcStatus(o))}</p></div>`;
+  if(o.stage==="none")return `<div class="phead"><b class="ptl">Kvittering</b><button class="btn small" id="ov-close">Lukk</button></div><div class="pkbody"><p class="sub" style="margin:0">Fant ingen varelinjer med pris. Prøv et skarpere skjermbilde der hele kvitteringen er med, gjerne fra butikkens app.</p>${o.raw?`<details><summary class="sub">Teksten appen leste</summary><textarea class="sharetxt" readonly>${esc(o.raw)}</textarea></details>`:""}</div>`;
+  if(o.pick!=null){const ln=o.lines[o.pick],q=key(o.q);
+    const rows=itemIds().filter(id=>!q||key(I(id).n).includes(q)).slice(0,q?60:25);
+    return `<div class="phead"><input type="search" id="rcp-q" placeholder="Hvilken vare er «${esc(ln.txt)}»? Søk" value="${esc(o.q)}" autocomplete="off"><button class="btn small" id="rcp-back">Tilbake</button></div>
+      <div class="pkbody"><ul class="pklist">${rows.map(id=>`<li class="item" data-rcpk="${id}"><span class="nm">${esc(I(id).n)}</span></li>`).join("")}</ul>
+      <div class="pknew"><div>Ny vare: <b>${esc(o.q.trim()||ln.nm)}</b></div><button class="btn small primary" id="rcp-new">Bruk som ny vare</button></div>
+      <button class="btn small" id="rcp-skip">Ikke ta med denne linjen</button></div>`}
+  const sumL=o.lines.filter(l=>l.on).reduce((a,l)=>a+(l.p||0),0);
+  const nNew=o.lines.filter(l=>l.on&&!l.id&&!findByName(l.nm)).length;
+  return `<div class="phead"><b class="ptl">Kvittering${o.store?": "+esc(o.store):""}</b><button class="btn small primary" id="rc-save">Lagre</button><button class="btn small" id="ov-close">Avbryt</button></div>
+    <div class="pkbody"><p class="sub" style="margin:0">${o.date?new Date(o.date).toLocaleDateString("nb-NO")+" · ":""}${o.total?"Sum på kvitteringen: <b>"+kr(o.total)+"</b> · ":""}Valgte linjer: <b>${kr(sumL)}</b>${o.total&&Math.abs(o.total-sumL)>1?' <span class="warnt">(avviker, sjekk linjene)</span>':""}</p>
+    <p class="sub" style="margin:0">Trykk på et navn for å koble linjen til riktig vare. Det appen lærer, husker den neste gang.</p>
+    <ul class="pklist">${o.lines.map((l,i)=>`<li class="item rcl${l.on?"":" off"}"><input type="checkbox" data-rcon="${i}" ${l.on?"checked":""} aria-label="Ta med ${esc(l.txt)}"><button class="rcname" data-rcpick="${i}"><span>${l.id?esc(I(l.id).n):"Ny vare: "+esc(l.nm)}${l.q>1?" ×"+l.q:""}</span><small class="by">${esc(l.txt)}${l.id&&!l.auto?" · koblet av deg":""}</small></button><input type="text" inputmode="decimal" class="rcp" data-rcp="${i}" value="${esc(String(l.p.toFixed(2)).replace(".",","))}" aria-label="Pris for ${esc(l.txt)}"></li>`).join("")}</ul>
+    ${nNew?`<label class="fl">${nNew} ${nNew===1?"ny vare legges":"nye varer legges"} i<select id="rc-pos">${posOptions(lastPos)}</select></label>`:""}
+    <p class="sub" style="margin:0">Lagre setter pris på varene, legger dem i Hjemme, huker av det som sto på handlelisten og fører beløpet i budsjettet.</p></div>`;
+}
+function saveReceipt(o){
+  const pos=$("#rc-pos")?$("#rc-pos").value:lastPos;lastPos=pos;lsSet("pos",pos);
+  snapUndo();const got=[];let sum=0;
+  for(const l of o.lines){if(!l.on)continue;
+    let id=l.id&&S.items[l.id]?l.id:findByName(l.nm);
+    if(!id)id=newItem(l.nm,1,pos);
+    const it=I(id);if(l.p>0)it.pr=Math.round(l.p/(l.q||1)*100)/100;
+    putHome(id);if(it.c===false)gotIt(id);
+    if(!l.auto||!l.id)S.rmap[normName(l.txt)]=id;
+    got.push({n:it.n,p:l.p});sum+=l.p||0;
+  }
+  const total=o.total||Math.round(sum*100)/100,at=o.date&&Math.abs(o.date-Date.now())<3*864e5?Date.now():(o.date||Date.now());
+  const near=Object.keys(S.hist).find(k=>{const t=S.hist[k];return !t.rc&&Math.abs(t.at-at)<12*3600e3});
+  const rec=near?S.hist[near]:(S.hist[uid("t")]={at,st:storeSel||"",by:ME.name||""});
+  rec.sum=total;rec.rc=1;rec.sn=o.store||"";rec.lines=got.slice(0,80);prune(S.hist,30);
+  OV=null;renderOverlay();changed();toast(got.length+(got.length===1?" vare":" varer")+" fra kvitteringen lagt i Hjemme",true);
+}
+function receiptsHtml(){
+  const rs=Object.values(S.hist).filter(t=>t.rc).sort((a,b)=>b.at-a.at).slice(0,8);
+  let h=`<div class="row" style="margin-top:10px"><button class="btn small primary" id="rcptbtn2">Les kvittering</button></div>`;
+  if(rs.length)h+=`<ul class="mlist" style="margin-top:8px">${rs.map(t=>`<li><details class="rcd"><summary><span>${new Date(t.at).toLocaleDateString("nb-NO")}${t.sn?" · "+esc(t.sn):""}</span><b>${kr(t.sum||0)}</b></summary><ul class="mlist">${(t.lines||[]).map(l=>`<li><span>${esc(l.n)}</span><small>${kr(l.p||0)}</small></li>`).join("")}</ul></details></li>`).join("")}</ul>`;
+  return h;
 }
 
 /* ===== Vinduer (velgere, oppskrift, laget, mer …) ===== */
@@ -581,7 +688,7 @@ function moreHtml(o){
   if(storeIds().length)h+=`<ul class="mlist">${storeIds().map(s=>`<li><span>${esc(S.stores[s].name)}${s===storeSel?' <small class="by">i bruk på denne telefonen</small>':""}</span><span class="row nowrap">${s===storeSel?"":`<button class="btn small" data-stuse="${s}">Bruk</button>`}<button class="btn small" data-stedit="${s}">Endre</button></span></li>`).join("")}</ul>`;
   if(storeSel)h+=`<p class="sub" style="margin:6px 0 0"><button class="linkbtn" data-stuse="">Bruk standard rekkefølge</button></p>`;
   h+=`<div class="row" style="margin-top:8px"><input type="text" id="newstore" placeholder="Ny butikk, f.eks. Rema Moholt"><button class="btn small primary" id="addstore">Legg til</button></div></section>`;
-  h+=`<section class="msec"><h3>Budsjett</h3>${budgetHtml()}</section>`;
+  h+=`<section class="msec"><h3>Budsjett og kvitteringer</h3>${budgetHtml()}${receiptsHtml()}</section>`;
   h+=`<section class="msec"><h3>Matsvinn</h3>${wasteHtml()}</section>`;
   h+=`<section class="msec"><h3>Sikkerhetskopier</h3><p class="sub">Appen tar en kopi av hele listen én gang om dagen og beholder kopiene en uke.</p>`;
   if(!o.bk)h+=`<p class="sub">Henter kopier …</p>`;
@@ -639,6 +746,7 @@ function renderOverlay(){
       <label class="fl">Hva kostet handelen? (valgfritt)<input type="text" inputmode="decimal" id="dn-sum" placeholder="${est.sum?"Anslag: "+Math.round(est.sum):"f.eks. 845"}" value="${esc(o.sum||"")}"></label>
       ${storeIds().length?`<label class="fl">Butikk<select id="dn-store"><option value="">Ikke valgt</option>${storeIds().map(s=>`<option value="${s}"${s===storeSel?" selected":""}>${esc(S.stores[s].name)}</option>`).join("")}</select></label>`:""}</div>`}
   else if(o.type==="more")h=moreHtml(o);
+  else if(o.type==="rcpt")h=rcptHtml(o);
   else if(o.type==="store")h=storeHtml(o);
   else if(o.type==="text")h=`<div class="phead"><b class="ptl">Del listen</b><button class="btn small" id="ov-close">Lukk</button></div><div class="pkbody"><p class="sub" style="margin:0">Marker teksten og kopier den.</p><textarea class="sharetxt" readonly>${esc(o.text)}</textarea></div>`;
   el.innerHTML=h;el.hidden=false;document.body.style.overflow="hidden";
@@ -684,6 +792,8 @@ function setTab(t){tab=t;confirmReset=false;editMode=false;selId=null;delArm=fal
 document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setTab(b.dataset.tab)});
 $("#more").addEventListener("click",()=>{OV={type:"more",bk:null};renderOverlay();if(fdb)loadBackups()});
 $("#toast").addEventListener("click",e=>{if(e.target.id==="undo")doUndo()});
+$("#rcptfile").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(f)readReceipt(f)});
+function pickReceipt(){const f=$("#rcptfile");f.value="";f.click()}
 $("#scanfile").addEventListener("change",async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;toast("Leter etter strekkode …");
   const code=await decodeBarcode(file);if(!code){toast("Fant ingen strekkode. Ta bildet nærmere, rett forfra og med godt lys.");return}handleCode(code)});
 document.addEventListener("click",e=>{const t=e.target.closest("[data-cook],[data-rec]");if(!t||!t.closest("#today"))return;if(t.dataset.cook)openCook(t.dataset.cook);else{OV={type:"recipe",did:t.dataset.rec};renderOverlay()}});
@@ -710,6 +820,7 @@ $("#view").addEventListener("click",e=>{
   if(t.id==="seeorder"){OV={type:"more",bk:null};renderOverlay();if(fdb)loadBackups();setTimeout(()=>{const m=$("#m-order");if(m)m.scrollIntoView()},50);return}
   if(t.id==="scanlist"){startScan("list");return}
   if(t.id==="scanhome"){startScan("home");return}
+  if(t.id==="rcptbtn"){pickReceipt();return}
   if(t.id==="shopmode"){shop=true;lsSet("shop",true);render();window.scrollTo(0,0);return}
   if(t.id==="shopdone"){OV={type:"done",sum:""};renderOverlay();return}
   if(t.id==="share"){shareList();return}
@@ -828,7 +939,18 @@ $("#picker").addEventListener("click",e=>{
     if(inb.length||sum>0){const rec={at:Date.now(),st:stv||"",picks:trip.filter(id=>S.items[id]).slice(0,120),by:ME.name||""};if(sum>0)rec.sum=Math.round(sum*100)/100;if(est>0)rec.est=Math.round(est);S.hist[uid("t")]=rec;prune(S.hist,30)}
     shop=false;trip=[];lsSet("shop",false);lsSet("trip",[]);OV=null;renderOverlay();changed();
     toast(inb.length?inb.length+(inb.length===1?" vare":" varer")+" lagt i Hjemme":"Handlet ferdig",true);return}
+  if(o.type==="rcpt"){
+    if(t.id==="rc-save"){saveReceipt(o);return}
+    if(t.dataset.rcon!==undefined){const l=o.lines[+t.dataset.rcon];l.on=t.checked;renderOverlay();return}
+    const nb=t.closest("[data-rcpick]");if(nb){o.pick=+nb.dataset.rcpick;o.q="";renderOverlay();setTimeout(()=>{const q=$("#rcp-q");if(q)q.focus()},50);return}
+    if(o.pick!=null){const ln=o.lines[o.pick];
+      if(t.id==="rcp-back"){o.pick=null;renderOverlay();return}
+      if(t.id==="rcp-skip"){ln.on=false;o.pick=null;renderOverlay();return}
+      if(t.id==="rcp-new"){ln.id=null;ln.nm=o.q.trim()?splitQ(o.q.trim()).n:ln.nm;ln.on=true;ln.auto=false;o.pick=null;renderOverlay();return}
+      const li=t.closest("[data-rcpk]");if(li){ln.id=li.dataset.rcpk;ln.nm=I(ln.id).n;ln.on=true;ln.auto=false;o.pick=null;renderOverlay();return}}
+    return}
   if(o.type==="more"){
+    if(t.id==="rcptbtn2"){pickReceipt();return}
     const sg=t.dataset.sgo||t.dataset.sno;
     if(t.dataset.sgo){const [x,p]=sg.split("|");if(S.items[x]&&S.items[p]){snapUndo();placeAt(x,{after:p});changed();renderOverlay();toast(I(x).n+" flyttet",true)}return}
     if(t.dataset.sno){S.cfg.ign[sg.replace("|","_")]=1;changed(true);renderOverlay();return}
@@ -848,13 +970,15 @@ $("#picker").addEventListener("input",e=>{const o=OV;if(!o)return;const id=e.tar
   if(id==="dp-q"){o.q=e.target.value;$("#dp-list").innerHTML=dayListHtml(o);$("#dp-new").innerHTML=dayNewHtml(o);return}
   if(id==="pk-q"){o.q=e.target.value;$("#pk-list").innerHTML=pickListHtml(o);$("#pk-new").innerHTML=pickNewHtml(o);return}
   if(id==="sc-q"){o.q=e.target.value;$("#sc-wrap").innerHTML=scanListHtml(o);return}
-  if(id==="dn-sum"){o.sum=e.target.value}});
+  if(id==="dn-sum"){o.sum=e.target.value}
+  if(id==="rcp-q"){o.q=e.target.value;const ae=e.target,ss=ae.selectionStart;renderOverlay();const n=$("#rcp-q");if(n){n.focus();try{n.setSelectionRange(ss,ss)}catch(_){}}return}
+  if(e.target.dataset.rcp!==undefined){const v=num(e.target.value);o.lines[+e.target.dataset.rcp].p=isNaN(v)?0:v}});
 $("#picker").addEventListener("keydown",e=>{if(e.key!=="Enter")return;const id=e.target.id;
   if(id==="pk-q"&&$("#pk-add"))$("#pk-add").click();
   if(id==="sc-q"&&$("#sc-add"))$("#sc-add").click();
   if(id==="newstore")$("#addstore").click();
   if(id==="dn-sum")$("#dn-ok").click()});
-$("#picker").addEventListener("change",e=>{if(e.target.id==="sc-pos"||e.target.id==="pk-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}});
+$("#picker").addEventListener("change",e=>{if(e.target.dataset.rcp!==undefined&&OV&&OV.type==="rcpt"){renderOverlay();return}if(e.target.id==="rc-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}if(e.target.id==="sc-pos"||e.target.id==="pk-pos"){lastPos=e.target.value;lsSet("pos",lastPos)}});
 function afterIng(d,addedId){if(addedId&&DAYS.some(day=>S.dinners[S.week[day]]===d)&&!I(addedId).home)need(addedId,false);changed(true)}
 
 /* ===== Nytt siden sist: husk når appen sist var åpen ===== */
@@ -877,7 +1001,7 @@ function adopt(d){
   S=d;ensure();B=clone(S);
   trip=trip.filter(id=>S.items[id]);
   if(storeSel&&!S.stores[storeSel])storeSel="";
-  render(true);if(OV&&!["recipe","store","done","text"].includes(OV.type))renderOverlay();
+  render(true);if(OV&&!["recipe","store","done","text","rcpt"].includes(OV.type))renderOverlay();
 }
 function startSync(user){
   ME.name=((user.displayName||"").trim().split(/\s+/)[0])||(user.email||"").split(/[@.]/)[0].replace(/^./,c=>c.toUpperCase());

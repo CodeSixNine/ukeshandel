@@ -218,6 +218,17 @@ nav button{position:relative}
 .sharetxt{width:100%;min-height:50vh;font:400 15px/1.5 var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 .fl select{font:400 16px var(--f-body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 .qb:disabled{opacity:.35;cursor:default}
+.srow .btn{padding-inline:12px}
+li.rcl{gap:10px;cursor:default}
+li.rcl.off .rcname{opacity:.45}
+.rcname{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:none;border:0;padding:2px 0;color:var(--ink);font:inherit;cursor:pointer;overflow-wrap:anywhere}
+.rcname span{text-decoration:underline dotted var(--muted);text-underline-offset:3px}
+li.item input.rcp{width:5.6em;height:auto;accent-color:auto;flex:none;text-align:right;font:inherit;font-size:16px;font-variant-numeric:tabular-nums;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.warnt{color:var(--warn);font-weight:700}
+.rcd{width:100%}
+.rcd summary{display:flex;justify-content:space-between;gap:10px;cursor:pointer;list-style:none}
+.rcd summary::-webkit-details-marker{display:none}
+.rcd .mlist{margin-left:8px}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 </head>
@@ -239,6 +250,7 @@ nav button{position:relative}
 <div class="picker" id="picker" role="dialog" aria-modal="true" hidden></div>
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="scanfile" accept="image/*" capture="environment" hidden>
+<input type="file" id="rcptfile" accept="image/*" hidden>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
